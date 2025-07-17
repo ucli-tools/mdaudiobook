@@ -11,8 +11,10 @@
 # Default target
 all: build-audiobook
 
-# Build the audiobook for example.md
-build: build-audiobook
+# Build the article in PDF LaTeX
+build-book:
+	mdtexpdf convert "example.md" --read-metadata;
+
 build-audiobook:
 	@echo "Building audiobook: example.md"
 	@mdaudiobook example.md

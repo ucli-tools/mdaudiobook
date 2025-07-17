@@ -165,10 +165,8 @@ clean-all: clean
 install:
 	. venv/bin/activate && pip install -e .
 
-build:
+build: setup
 	@echo "Building mdaudiobook..."
-	@echo "Validating Python dependencies..."
-	@if [ ! -d "venv" ]; then echo "Virtual environment not found. Run 'make setup' first."; exit 1; fi
 	. venv/bin/activate && python -c "import sys; print(f'Python {sys.version}')"
 	@echo "Creating executable wrapper script..."
 	@MDAUDIOBOOK_DIR="$$(pwd)"; \
@@ -209,14 +207,80 @@ build:
 # Clean and rebuild
 rebuild: clean build
 
-# Install to system PATH (like mdtexpdf)
-install-system: build
+# Install to system PATH and setup user configuration
+install-system: install-prompt build
 	@echo "Installing mdaudiobook to /usr/local/bin..."
 	@if [ ! -f "mdaudiobook" ]; then echo "Build first with 'make build'"; exit 1; fi
+
+	@# Install executable
 	sudo cp mdaudiobook /usr/local/bin/mdaudiobook
 	sudo chmod +x /usr/local/bin/mdaudiobook
-	@echo "mdaudiobook installed successfully to /usr/local/bin/mdaudiobook"
-	@echo "You can now use 'mdaudiobook' from anywhere in the system"
+
+
+# Prompt for user configuration before install
+install-prompt:
+	@echo "Starting mdaudiobook system installation..."
+	@# Create user config directory
+	mkdir -p ~/.config/mdaudiobook
+	
+	@# Copy config templates if they don't exist
+	@if [ ! -f ~/.config/mdaudiobook/config.yaml ]; then \
+		cp config/default.yaml ~/.config/mdaudiobook/config.yaml; \
+		echo "Created default user config at ~/.config/mdaudiobook/config.yaml"; \
+	fi
+	@if [ ! -f ~/.config/mdaudiobook/.env ]; then \
+		echo "Creating default .env file in ~/.config/mdaudiobook/"; \
+		cp .env.example ~/.config/mdaudiobook/.env; \
+		echo "✓ Created user .env file at ~/.config/mdaudiobook/.env"; \
+	fi
+
+	@# Ask to sync local .env to global config and set flag
+	@if [ -f .env ]; then \
+		echo "Local .env found. Copy to ~/.config/mdaudiobook/.env? (y/N) "; \
+		read -r REPLY; \
+		case "$$REPLY" in \
+			[Yy]*) \
+				cp .env ~/.config/mdaudiobook/.env; \
+				echo "✓ Synced local .env to global config."; \
+				touch .install_synced_flag;; \
+			*) \
+				echo "Skipping sync.";; \
+		esac; \
+	fi
+
+	@# Automatically configure Google Cloud credentials if found
+	@if [ -d credentials ]; then \
+		CREDENTIALS_FILE=$$(find credentials -name '*.json' -print -quit); \
+		if [ -n "$$CREDENTIALS_FILE" ]; then \
+			echo "✓ Found Google credentials file: $$CREDENTIALS_FILE. Configuring for system-wide use..."; \
+			cp "$$CREDENTIALS_FILE" ~/.config/mdaudiobook/google-credentials.json; \
+			sed -i -e "s@^GOOGLE_APPLICATION_CREDENTIALS=.*@GOOGLE_APPLICATION_CREDENTIALS=~/.config/mdaudiobook/google-credentials.json@" ~/.config/mdaudiobook/.env; \
+			PROJECT_ID=$$(grep -o '"project_id": "[^"]*' "$$CREDENTIALS_FILE" | grep -o '[^"]*$$' | head -n 1); \
+			if [ -n "$$PROJECT_ID" ]; then \
+				sed -i -e "s@^GOOGLE_CLOUD_PROJECT=.*@GOOGLE_CLOUD_PROJECT=$$PROJECT_ID@" ~/.config/mdaudiobook/.env; \
+				echo "✓ Automatically configured Google Cloud credentials and project ID."; \
+			else \
+				echo "⚠️  Could not automatically determine project_id. Please set it manually in ~/.config/mdaudiobook/.env"; \
+			fi; \
+		fi; \
+	fi
+	@echo ""
+
+
+	
+	@echo ""
+	@echo "✅ mdaudiobook installed successfully to /usr/local/bin/mdaudiobook"
+	@echo ""
+	@# Display final message based on whether .env was synced
+	@if [ -f .install_synced_flag ]; then \
+		echo "IMPORTANT: Your local .env was synced. Please verify your API keys in the file below:"; \
+		rm .install_synced_flag; \
+	else \
+		echo "IMPORTANT: To use premium features, please add your API keys to the file below:"; \
+	fi
+	@echo "  ~/.config/mdaudiobook/.env"
+	@echo ""
+	@echo "You can now use 'mdaudiobook' from anywhere in the system."
 
 # Remove from system PATH
 uninstall-system:

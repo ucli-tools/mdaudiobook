@@ -85,7 +85,9 @@ temp/
 *.key
 *.pem
 credentials.json
+google-credentials.json
 secrets.yaml
+credentials/*.json
 
 # =============================================================================
 # Logs

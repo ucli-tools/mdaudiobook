@@ -1,54 +1,147 @@
 ---
-title: "Introduction to Quantum Physics"
-author: "Dr. Alice Quantum"
-description: "A beginner's guide to quantum mechanics concepts"
-genre: "Science Education"
-narrator_voice: "en-us-standard-c"
-reading_speed: "medium"
+# =============================================================================
+# COMMON METADATA (used by both mdtexpdf and mdaudiobook)
+# =============================================================================
+title: "Real and Complex Mathematical Analysis"
+author: "Arithmoi Foundation"
+date: "May 23, 2025"
+description: "A comprehensive guide to real and complex mathematical analysis, covering foundations, sequences, series, continuity, differentiation, integration, and complex function theory."
+
+# =============================================================================
+# PDF-SPECIFIC METADATA (mdtexpdf only)
+# =============================================================================
+# Document structure
+format: "book"
+section: "foundations"
+
+# Section numbering
+no_numbers: true
+
+# Headers and footers
+header_footer_policy: "all"
+footer: "© 2025 Arithmoi Foundation | arithmoi.org. All rights reserved."
+pageof: true
+date_footer: "DD/MM/YY"
 ---
 
-# Introduction to Quantum Physics
+# Real and Complex Mathematical Analysis
 
-## Chapter 1: The Quantum Revolution
+# Part 1: Real Analysis
 
-Quantum physics represents one of the most profound shifts in our understanding of reality. Unlike classical physics, where objects have definite positions and velocities, quantum mechanics introduces fundamental uncertainty.
+## Chapter 1: Foundations of Real Numbers
 
-The famous equation $E = mc^2$ from Einstein's relativity theory connects energy and mass, but quantum mechanics goes further. The Schrödinger equation describes how quantum systems evolve:
+### 1.1 The Real Number System
 
-$$i\hbar\frac{\partial}{\partial t}|\psi\rangle = \hat{H}|\psi\rangle$$
+The **real numbers**, denoted by $\mathbb{R}$ (pronounced "R, the set of real numbers"), are a fundamental building block of mathematical analysis. Real numbers include:
 
-This equation tells us that quantum states evolve deterministically, even though individual measurements are probabilistic.
+- The rational numbers $\mathbb{Q}$ (pronounced "Q, the set of rationals"): numbers that can be written as fractions, $\frac{p}{q}$, where $p$ and $q$ are integers and $q \neq 0$.
+- The irrational numbers: numbers that cannot be written as fractions, such as $\sqrt{2}$ and $\pi$ (pronounced "pi").
 
-## Chapter 2: Wave-Particle Duality
+**Properties of $\mathbb{R}$:**
 
-One of the most striking features of quantum mechanics is wave-particle duality. Light, for example, can behave as both a wave and a particle depending on how we observe it.
+- **Field properties**: Real numbers can be added, subtracted, multiplied, and divided (except by zero), and these operations satisfy the usual field axioms.
+- **Order properties**: The real numbers have a total order; for any $a, b \in \mathbb{R}$, we can say $a < b$, $a = b$, or $a > b$.
+- **Completeness**: Every non-empty set of real numbers that is bounded above has a least upper bound (supremum).
 
-The double-slit experiment demonstrates this beautifully:
-- When we don't observe which slit the photon goes through, we see an interference pattern (wave behavior)
-- When we do observe, the interference pattern disappears (particle behavior)
+### 1.2 The Completeness Axiom
 
-This isn't just a limitation of our measurement tools—it's a fundamental property of quantum systems.
+The **completeness axiom** is a defining property of the real numbers. It is what distinguishes $\mathbb{R}$ from $\mathbb{Q}$.
 
-## Chapter 3: Quantum Entanglement
+**Completeness Axiom Statement:**
 
-Einstein famously called quantum entanglement "spooky action at a distance" (Einstein et al., 1935). When two particles become entangled, measuring one instantly affects the other, regardless of the distance between them.
+For every non-empty subset $S \subseteq \mathbb{R}$ that is bounded above, there exists a least upper bound (supremum) $s_0 \in \mathbb{R}$ such that:
 
-Bell's theorem (Bell, 1964) proved that no local hidden variable theory can reproduce all the predictions of quantum mechanics. This has profound implications for our understanding of reality and locality.
+$$
+\forall x \in S, \quad x \leq s_0
+$$
 
-### Applications
+and
 
-Quantum entanglement has practical applications in:
-1. Quantum computing
-2. Quantum cryptography  
-3. Quantum teleportation
-4. Quantum sensing
+$$
+\forall \epsilon > 0, \quad \exists x_0 \in S \text{ such that } s_0 - \epsilon < x_0 \leq s_0
+$$
 
-## Conclusion
+Here, $\epsilon$ (pronounced "epsilon") is any positive real number, representing an arbitrarily small quantity.
 
-Quantum physics challenges our classical intuitions but provides the most accurate description of nature we have. As Richard Feynman said, "Nobody understands quantum mechanics"—and that's part of what makes it so fascinating.
+- **Supremum** (least upper bound): The smallest real number that is greater than or equal to every element of $S$.
 
-The mathematics may seem abstract, but quantum effects are all around us, from the stability of atoms to the operation of lasers and computer chips.
+### 1.3 Order Properties of $\mathbb{R}$
 
----
+The real numbers are an **ordered field**, which means:
 
-*This document demonstrates markdown features including headers, math expressions, citations, lists, and emphasis for audiobook generation.*
+- For any $a, b, c \in \mathbb{R}$:
+  - If $a < b$, then $a + c < b + c$
+  - If $a < b$ and $c > 0$, then $ac < bc$
+  - For any $a \in \mathbb{R}$, exactly one of $a = 0$, $a > 0$, or $a < 0$ is true (trichotomy law)
+
+These properties allow us to compare and manipulate inequalities involving real numbers.
+
+### 1.4 The Archimedean Property and Density of $\mathbb{Q}$
+
+#### Archimedean Property
+
+The **Archimedean property** states that:
+
+For any real number $x$, there exists a natural number $n \in \mathbb{N}$ such that 
+
+$$
+n > x
+$$
+
+where $\mathbb{N}$ (pronounced "N, the set of natural numbers") is the set $\{1, 2, 3, \dots\}$.
+
+#### Density of $\mathbb{Q}$
+
+The **rational numbers** are **dense** in $\mathbb{R}$. This means:
+
+Between any two real numbers $a$ and $b$ with $a < b$, there exists a rational number $q$ such that
+
+$$
+a < q < b
+$$
+
+This property is essential for constructing sequences and for approximation arguments in analysis.
+
+### 1.5 Supremum and Infimum (Least Upper and Greatest Lower Bounds)
+
+Given a subset $S \subseteq \mathbb{R}$:
+
+- An **upper bound** for $S$ is any $u \in \mathbb{R}$ such that $x \leq u$ for all $x \in S$.
+- The **supremum** (least upper bound), denoted $\sup S$, is the smallest upper bound of $S$.
+
+Similarly:
+
+- A **lower bound** for $S$ is any $l \in \mathbb{R}$ such that $x \geq l$ for all $x \in S$.
+- The **infimum** (greatest lower bound), denoted $\inf S$, is the largest lower bound of $S$.
+
+**Formal Definitions:**
+
+Let $S$ be a non-empty subset of $\mathbb{R}$.
+
+- $u$ is an **upper bound** of $S$ if $\forall x \in S, \ x \leq u$.
+- $s_0$ is the **supremum** of $S$ if:
+  - $s_0$ is an upper bound of $S$
+  - For any $\epsilon > 0$, there exists $x_0 \in S$ such that $s_0 - \epsilon < x_0$
+
+The **infimum** is defined analogously.
+
+### 1.6 The Extended Real Number System
+
+The **extended real number system** augments $\mathbb{R}$ with two symbols, $+\infty$ and $-\infty$ (pronounced "plus infinity" and "minus infinity"), to handle limits and unbounded sets.
+
+- The set is denoted $\overline{\mathbb{R}} = \mathbb{R} \cup \{+\infty, -\infty\}$
+- For any real $x$:
+  - $x < +\infty$
+  - $x > -\infty$
+
+**Applications:**
+
+- Useful when working with limits, especially in improper integrals and measures.
+
+
+
+#### Exercises
+
+1. Prove that between any two distinct real numbers, there is an irrational number.
+2. Show that the set $S = \{x \in \mathbb{Q} : x^2 < 2\}$ is bounded above in $\mathbb{Q}$, but its supremum does not belong to $\mathbb{Q}$.
+3. Give an example of a non-empty set $S \subseteq \mathbb{R}$ that is bounded below but does not attain its infimum.

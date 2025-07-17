@@ -7,11 +7,9 @@ Orchestrates the complete Markdown to Audiobook conversion process
 import sys
 import argparse
 from pathlib import Path
-import yaml
 import json
 from typing import Dict, Any, Optional
 import os
-from dotenv import load_dotenv
 
 # Import from src package
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -19,42 +17,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from src.markdown_processor import MarkdownProcessor
 from src.text_enhancer import TextEnhancer
 from src.audiobook_generator import AudiobookGenerator
-
-
-def load_config(config_path: Optional[Path] = None) -> Dict[str, Any]:
-    """Load configuration from YAML file"""
-    if config_path is None:
-        # Try default locations
-        possible_configs = [
-            Path('config/default.yaml'),
-            Path('config.yaml'),
-            Path(__file__).parent.parent / 'config' / 'default.yaml'
-        ]
-        
-        for config_file in possible_configs:
-            if config_file.exists():
-                config_path = config_file
-                break
-        else:
-            raise FileNotFoundError("No configuration file found. Please specify --config or create config/default.yaml")
-    
-    with open(config_path, 'r', encoding='utf-8') as f:
-        config = yaml.safe_load(f)
-    
-    return config
-
-
-def setup_environment():
-    """Setup environment variables"""
-    # Load .env file if it exists
-    env_file = Path('.env')
-    if env_file.exists():
-        load_dotenv(env_file)
-    
-    # Load from parent directory if not found
-    parent_env = Path(__file__).parent.parent / '.env'
-    if parent_env.exists():
-        load_dotenv(parent_env)
+from src.config_manager import ConfigManager
 
 
 def validate_input_file(input_path: Path) -> bool:
@@ -157,15 +120,14 @@ Output formats: m4b (default), mp3, wav
     args = parser.parse_args()
     
     try:
-        # Setup environment
-        setup_environment()
-        
+        # Load configuration using the new manager
+        # The manager will handle .env loading and config path resolution
+        config_manager = ConfigManager(config_file=args.config)
+        config = config_manager.config
+
         # Validate input
         if not validate_input_file(args.input):
             sys.exit(1)
-        
-        # Load configuration
-        config = load_config(args.config)
         
         # Determine processing mode
         processing_mode = determine_processing_mode(config, args)

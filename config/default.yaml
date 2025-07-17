@@ -127,7 +127,7 @@ voices:
   # Main title voice (# Level 1) - Professional, deep male voice
   main_title_voice:
     provider: "google"
-    voice_id: "en-US-Wavenet-J"  # Premium male voice, natural and deep
+    voice_id: "en-US-Wavenet-D"  # Premium male voice, natural and deep
     language_code: "en-US"
     speed: 0.85  # Slightly slower for gravitas
     pitch: -1.0  # Moderately deep, not extreme
@@ -137,17 +137,17 @@ voices:
   # Chapter header voice (## Level 2) - Authoritative male voice
   chapter_voice:
     provider: "google"
-    voice_id: "en-US-Wavenet-B"  # Strong male voice for chapters
+    voice_id: "en-US-Wavenet-D"  # Strong male voice for chapters
     language_code: "en-US"
     speed: 0.85
     pitch: -1.0  # Lower pitch for authority
     emphasis: 1.4
     pause_after: 2.0
     
-  # Section voice (### Level 3) - Same high-quality voice as main title
+  # Section voice (### Level D) - Same high-quality voice as main title
   section_voice:
     provider: "google"
-    voice_id: "en-US-Wavenet-J"  # Same premium male voice as main title
+    voice_id: "en-US-Wavenet-D"  # Same premium male voice as main title
     language_code: "en-US"
     speed: 0.9   # Slightly faster than main title
     pitch: -0.8  # Slightly higher than main title but still deep
@@ -157,7 +157,7 @@ voices:
   # Subsection voice (#### Level 4+) - Subtle male distinction
   subsection_voice:
     provider: "google"
-    voice_id: "en-US-Standard-B"  # Different male voice for subsections
+    voice_id: "en-US-Wavenet-D"  # Different male voice for subsections
     language_code: "en-US"
     speed: 0.95
     pitch: 0.0   # Normal pitch but distinct voice
@@ -167,7 +167,7 @@ voices:
   # Mathematical expression voice - Clear articulation
   math_voice:
     provider: "google"
-    voice_id: "en-US-Wavenet-A"  # Clear male voice
+    voice_id: "en-US-Wavenet-D"  # Clear male voice
     language_code: "en-US"
     speed: 0.8  # Slower for clarity
     pitch: -1.0
@@ -178,7 +178,7 @@ voices:
   # Secondary voice for footnotes/citations
   secondary_voice:
     provider: "google"
-    voice_id: "en-US-Wavenet-E"  # Softer female voice
+    voice_id: "en-US-Wavenet-D"  # Softer female voice
     language_code: "en-US"
     speed: 0.95
     pitch: -0.5
@@ -187,7 +187,7 @@ voices:
   # Code block voice - Monotone for technical content
   code_voice:
     provider: "google"
-    voice_id: "en-US-Standard-B"  # Standard voice for code
+    voice_id: "en-US-Wavenet-D"  # Standard voice for code
     language_code: "en-US"
     speed: 0.85
     pitch: -2.0

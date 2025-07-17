@@ -29,24 +29,44 @@
 
 ### Installation
 
-1.  **Clone the repository:**
+1.  **Clone the Repository**
+
+    First, clone the repository to your local machine:
     ```bash
     git clone https://github.com/ucli-tools/mdaudiobook.git
     cd mdaudiobook
     ```
 
-2.  **Setup the environment:**
-    ```bash
-    make setup
-    ```
+2.  **Install and Configure**
 
-3.  **Build and install the tool system-wide:**
+    The `install-system` command fully prepares and installs the tool in one step. It automatically sets up a Python environment, installs dependencies, and copies the `mdaudiobook` executable to `/usr/local/bin`.
+
+    During installation, it will create a user-specific configuration directory at `~/.config/mdaudiobook/`. It will also create a default `.env` file for your API keys.
+
     ```bash
     make install-system
     ```
-    *You may be prompted for your password as this installs the tool to `/usr/local/bin`.*
 
-4.  **Verify the installation:**
+    To use premium TTS services, you must add your API keys to `~/.config/mdaudiobook/.env`. You can open it for editing with your favorite editor:
+    ```bash
+    nano ~/.config/mdaudiobook/.env
+    ```
+
+    ### Google Cloud Authentication (The Easy Way)
+
+    For Google Cloud, the setup is fully automated. Simply place your downloaded Google Cloud service account key file (e.g., `gothic-ripsaw-34581-a4b1cdef.json`) inside the `credentials/` directory located in the project root.
+
+    That's it. When you run `make install-system`, the installer will automatically:
+    - Find your `.json` key file inside `credentials/`.
+    - Copy it to the system-wide config directory for you.
+    - Read the `project_id` from the file.
+    - Update your `~/.config/mdaudiobook/.env` file with the correct path and project ID.
+
+    This provides a seamless, zero-configuration setup for Google Cloud services.
+
+3.  **Verify the Installation**
+
+    You can now run `mdaudiobook` from anywhere. Check the version to confirm it's working:
     ```bash
     mdaudiobook --version
     ```
