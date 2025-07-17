@@ -1,7 +1,7 @@
 # mdaudiobook - Professional Markdown to Audiobook Pipeline
 # Part of the ucli-tools ecosystem
 
-.PHONY: help setup dev-setup demo test lint clean clean-all audiobook audiobook-basic audiobook-local-ai audiobook-api audiobook-hybrid process-all set-google
+.PHONY: help setup dev-setup demo test lint clean clean-all audiobook audiobook-basic audiobook-local-ai audiobook-api audiobook-hybrid process-all set-google build rebuild install-system uninstall-system
 
 # Default target
 help:
@@ -22,6 +22,10 @@ help:
 	@echo "  process-all                        - Process all documents in documents/"
 	@echo ""
 	@echo "Development:"
+	@echo "  build            - Build mdaudiobook executable wrapper"
+	@echo "  rebuild          - Clean and rebuild"
+	@echo "  install-system   - Install to /usr/local/bin (system-wide)"
+	@echo "  uninstall-system - Remove from system PATH"
 	@echo "  test             - Run all tests"
 	@echo "  test-integration - Run integration tests"
 	@echo "  lint             - Check code quality"
@@ -161,6 +165,66 @@ install:
 	. venv/bin/activate && pip install -e .
 
 build:
+	@echo "Building mdaudiobook..."
+	@echo "Validating Python dependencies..."
+	@if [ ! -d "venv" ]; then echo "Virtual environment not found. Run 'make setup' first."; exit 1; fi
+	. venv/bin/activate && python -c "import sys; print(f'Python {sys.version}')"
+	@echo "Creating executable wrapper script..."
+	@MDAUDIOBOOK_DIR="$$(pwd)"; \
+	if [ ! -f "mdaudiobook" ]; then \
+		echo '#!/bin/bash' > mdaudiobook; \
+		echo '# mdaudiobook - System wrapper for mdaudiobook.py' >> mdaudiobook; \
+		echo '' >> mdaudiobook; \
+		echo '# Set mdaudiobook directory (absolute path)' >> mdaudiobook; \
+		echo "MDAUDIOBOOK_DIR=\"$$MDAUDIOBOOK_DIR\"" >> mdaudiobook; \
+		echo '' >> mdaudiobook; \
+		echo '# Store current working directory' >> mdaudiobook; \
+		echo 'ORIGINAL_CWD="$$(pwd)"' >> mdaudiobook; \
+		echo '' >> mdaudiobook; \
+		echo '# Convert relative paths to absolute paths' >> mdaudiobook; \
+		echo 'args=()' >> mdaudiobook; \
+		echo 'for arg in "$$@"; do' >> mdaudiobook; \
+		echo '    # Check if argument looks like a file path (contains . or / and doesnt start with -)' >> mdaudiobook; \
+		echo '    if [[ "$$arg" == *.* || "$$arg" == */* ]] && [[ "$$arg" != -* ]]; then' >> mdaudiobook; \
+		echo '        # Convert to absolute path if its relative' >> mdaudiobook; \
+		echo '        if [[ "$$arg" != /* ]]; then' >> mdaudiobook; \
+		echo '            args+=("$$ORIGINAL_CWD/$$arg")' >> mdaudiobook; \
+		echo '        else' >> mdaudiobook; \
+		echo '            args+=("$$arg")' >> mdaudiobook; \
+		echo '        fi' >> mdaudiobook; \
+		echo '    else' >> mdaudiobook; \
+		echo '        args+=("$$arg")' >> mdaudiobook; \
+		echo '    fi' >> mdaudiobook; \
+		echo 'done' >> mdaudiobook; \
+		echo '' >> mdaudiobook; \
+		echo '# Activate virtual environment and execute Python script with absolute paths' >> mdaudiobook; \
+		echo 'cd "$$MDAUDIOBOOK_DIR"' >> mdaudiobook; \
+		echo '. venv/bin/activate && python scripts/process_audiobook.py "$${args[@]}"' >> mdaudiobook; \
+		chmod +x mdaudiobook; \
+		echo "Created executable wrapper: mdaudiobook"; \
+	fi
+	@echo "mdaudiobook build complete!"
+
+# Clean and rebuild
+rebuild: clean build
+
+# Install to system PATH (like mdtexpdf)
+install-system: build
+	@echo "Installing mdaudiobook to /usr/local/bin..."
+	@if [ ! -f "mdaudiobook" ]; then echo "Build first with 'make build'"; exit 1; fi
+	sudo cp mdaudiobook /usr/local/bin/mdaudiobook
+	sudo chmod +x /usr/local/bin/mdaudiobook
+	@echo "mdaudiobook installed successfully to /usr/local/bin/mdaudiobook"
+	@echo "You can now use 'mdaudiobook' from anywhere in the system"
+
+# Remove from system PATH
+uninstall-system:
+	@echo "Uninstalling mdaudiobook from system..."
+	sudo rm -f /usr/local/bin/mdaudiobook
+	@echo "mdaudiobook uninstalled from system"
+
+# Package build
+package:
 	. venv/bin/activate && python setup.py sdist bdist_wheel
 
 # Validation

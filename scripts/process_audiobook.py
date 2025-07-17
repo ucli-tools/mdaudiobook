@@ -131,28 +131,26 @@ def print_processing_info(input_path: Path, output_path: Path, mode: str, config
 def main():
     """Main processing function"""
     parser = argparse.ArgumentParser(
-        description='Convert Markdown documents to professional audiobooks',
+        description='mdaudiobook - Convert Markdown documents to audiobooks with AI enhancement',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
-Processing Modes:
-  basic     - Simple markdown parsing + local TTS (fastest, $0 cost)
-  local_ai  - AI text enhancement + local TTS (better quality, $0 cost)
-  api       - AI enhancement + premium TTS APIs (highest quality, API costs)
-  hybrid    - Intelligent fallback chain (best reliability)
-
 Examples:
-  %(prog)s document.md
-  %(prog)s document.md --mode api --output audiobooks/
-  %(prog)s document.md --config custom_config.yaml
-        """
-    )
+  %(prog)s document.md                    # Basic conversion
+  %(prog)s document.md --mode api         # Use premium API processing
+  %(prog)s document.md --output audio/    # Specify output directory
+  %(prog)s document.md --verbose --dry-run # Preview processing
+
+Supported modes: basic, local_ai, api, hybrid
+Output formats: m4b (default), mp3, wav
+        """)
     
-    parser.add_argument('input', type=Path, help='Input markdown file')
-    parser.add_argument('--output', '-o', type=Path, help='Output directory (default: output/)')
-    parser.add_argument('--config', '-c', type=Path, help='Configuration file (default: config/default.yaml)')
+    parser.add_argument('--version', action='version', version='mdaudiobook 1.0.0')
+    parser.add_argument('input', type=Path, help='Input Markdown file')
+    parser.add_argument('--output', '-o', type=Path, help='Output directory or file path')
+    parser.add_argument('--config', '-c', type=Path, help='Configuration file path')
     parser.add_argument('--mode', '-m', choices=['basic', 'local_ai', 'api', 'hybrid'], 
-                       help='Processing mode (overrides config)')
-    parser.add_argument('--verbose', '-v', action='store_true', help='Verbose output')
+                       help='Processing mode (default: from config)')
+    parser.add_argument('--verbose', '-v', action='store_true', help='Enable verbose output')
     parser.add_argument('--dry-run', action='store_true', help='Show what would be processed without generating audio')
     
     args = parser.parse_args()
