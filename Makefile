@@ -137,6 +137,7 @@ format:
 # Cleanup
 clean:
 	@echo "Cleaning generated files..."
+	rm -f mdaudiobook
 	rm -rf output/audiobooks/*
 	rm -rf output/enhanced_text/*
 	rm -rf __pycache__/
@@ -199,7 +200,7 @@ build:
 		echo '' >> mdaudiobook; \
 		echo '# Activate virtual environment and execute Python script with absolute paths' >> mdaudiobook; \
 		echo 'cd "$$MDAUDIOBOOK_DIR"' >> mdaudiobook; \
-		echo '. venv/bin/activate && python scripts/process_audiobook.py "$${args[@]}"' >> mdaudiobook; \
+		echo '. venv/bin/activate && python scripts/process_audiobook.py "$${args[@]}" --output-dir "$$ORIGINAL_CWD"' >> mdaudiobook; \
 		chmod +x mdaudiobook; \
 		echo "Created executable wrapper: mdaudiobook"; \
 	fi

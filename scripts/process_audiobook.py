@@ -81,8 +81,9 @@ def create_output_path(input_path: Path, output_dir: Optional[Path],
                       config: Dict[str, Any]) -> Path:
     """Create output path for audiobook"""
     if output_dir is None:
+        # Fallback to config if no directory is provided
         output_dir = Path(config.get('output', {}).get('directory', 'output'))
-    
+
     output_dir.mkdir(parents=True, exist_ok=True)
     
     # Create filename based on input
@@ -146,7 +147,7 @@ Output formats: m4b (default), mp3, wav
     
     parser.add_argument('--version', action='version', version='mdaudiobook 1.0.0')
     parser.add_argument('input', type=Path, help='Input Markdown file')
-    parser.add_argument('--output', '-o', type=Path, help='Output directory or file path')
+    parser.add_argument('--output-dir', '-o', type=Path, help='Specify output directory')
     parser.add_argument('--config', '-c', type=Path, help='Configuration file path')
     parser.add_argument('--mode', '-m', choices=['basic', 'local_ai', 'api', 'hybrid'], 
                        help='Processing mode (default: from config)')
@@ -170,7 +171,7 @@ Output formats: m4b (default), mp3, wav
         processing_mode = determine_processing_mode(config, args)
         
         # Create output path
-        output_path = create_output_path(args.input, args.output, config)
+        output_path = create_output_path(args.input, args.output_dir, config)
         
         # Print processing info
         print_processing_info(args.input, output_path, processing_mode, config)
