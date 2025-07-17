@@ -135,7 +135,6 @@ Thumbs.db
 # =============================================================================
 # Configuration Files (keep examples)
 # =============================================================================
-config/default.yaml
 config/local.yaml
 config/production.yaml
 !config/*.example
