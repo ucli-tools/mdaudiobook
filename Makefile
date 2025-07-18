@@ -3,7 +3,10 @@
 
 .PHONY: help setup dev-setup demo test lint clean clean-all audiobook audiobook-basic audiobook-local-ai audiobook-api audiobook-hybrid process-all set-google build rebuild install-system uninstall-system
 
-# Default target
+# Default target for ucli compatibility
+build: install-system
+
+# Help target
 help:
 	@echo "mdaudiobook - Professional Markdown to Audiobook Pipeline"
 	@echo ""
@@ -164,8 +167,6 @@ clean-all: clean
 # Installation and packaging
 install:
 	. venv/bin/activate && pip install -e .
-
-build: install-system
 
 # Clean and rebuild
 rebuild: clean build
