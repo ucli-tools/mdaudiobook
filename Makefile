@@ -172,9 +172,8 @@ install:
 rebuild: clean build
 
 # Install to system PATH and setup user configuration
-install-system: install-prompt setup
+install-system: install-prompt
 	@echo "Installing mdaudiobook with pipx..."
-	@# Install using pipx for isolated CLI tool installation
 	pipx install .
 	@echo "✓ mdaudiobook installed successfully with pipx."
 	@echo "Run 'mdaudiobook --help' to get started."
