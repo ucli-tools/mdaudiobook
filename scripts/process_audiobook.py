@@ -14,10 +14,10 @@ import os
 # Import from src package
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from src.markdown_processor import MarkdownProcessor
-from src.text_enhancer import TextEnhancer
-from src.audiobook_generator import AudiobookGenerator
-from src.config_manager import ConfigManager
+from src.mdaudiobook.markdown_processor import MarkdownProcessor
+from src.mdaudiobook.text_enhancer import TextEnhancer
+from src.mdaudiobook.audiobook_generator import AudiobookGenerator
+from src.mdaudiobook.config_manager import ConfigManager
 
 
 def validate_input_file(input_path: Path) -> bool:
