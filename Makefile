@@ -165,9 +165,14 @@ clean-all: clean
 install:
 	. venv/bin/activate && pip install -e .
 
-build: setup
-	@echo "Building mdaudiobook..."
-	. venv/bin/activate && python -c "import sys; print(f'Python {sys.version}')"
+build: install-system
+
+# Clean and rebuild
+rebuild: clean build
+
+# Install to system PATH and setup user configuration
+install-system: install-prompt setup
+	@echo "Installing mdaudiobook to /usr/local/bin..."
 	@echo "Creating executable wrapper script..."
 	@MDAUDIOBOOK_DIR="$$(pwd)"; \
 	if [ ! -f "mdaudiobook" ]; then \
@@ -202,15 +207,6 @@ build: setup
 		chmod +x mdaudiobook; \
 		echo "Created executable wrapper: mdaudiobook"; \
 	fi
-	@echo "mdaudiobook build complete!"
-
-# Clean and rebuild
-rebuild: clean build
-
-# Install to system PATH and setup user configuration
-install-system: install-prompt build
-	@echo "Installing mdaudiobook to /usr/local/bin..."
-	@if [ ! -f "mdaudiobook" ]; then echo "Build first with 'make build'"; exit 1; fi
 
 	@# Install executable
 	sudo cp mdaudiobook /usr/local/bin/mdaudiobook
