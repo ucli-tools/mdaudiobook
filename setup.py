@@ -77,7 +77,6 @@ setup(
     entry_points={
         "console_scripts": [
             "mdaudiobook=mdaudiobook.cli:main",
-            "mdaudiobook-process=scripts.process_audiobook:main",
         ],
     },
     include_package_data=True,

@@ -43,7 +43,9 @@ output/
 *.m4a
 temp_audio/
 audio_chunks/
-mdaudiobook
+# CLI binary (not the src/mdaudiobook/ directory)
+/mdaudiobook
+/usr/local/bin/mdaudiobook
 
 # =============================================================================
 # Virtual Environments

@@ -173,43 +173,11 @@ rebuild: clean build
 
 # Install to system PATH and setup user configuration
 install-system: install-prompt setup
-	@echo "Installing mdaudiobook to /opt/ucli-tools/mdaudiobook..."
-	@# Create installation directory
-	sudo mkdir -p /opt/ucli-tools/mdaudiobook
-	@# Copy entire project to permanent location
-	sudo cp -r . /opt/ucli-tools/mdaudiobook/
-	@# Set proper ownership
-	sudo chown -R root:root /opt/ucli-tools/mdaudiobook
-	@# Create system wrapper script
-	@echo '#!/bin/bash' | sudo tee /usr/local/bin/mdaudiobook > /dev/null
-	@echo '# mdaudiobook - System wrapper for mdaudiobook.py' | sudo tee -a /usr/local/bin/mdaudiobook > /dev/null
-	@echo '' | sudo tee -a /usr/local/bin/mdaudiobook > /dev/null
-	@echo '# Set mdaudiobook directory (permanent installation)' | sudo tee -a /usr/local/bin/mdaudiobook > /dev/null
-	@echo 'MDAUDIOBOOK_DIR="/opt/ucli-tools/mdaudiobook"' | sudo tee -a /usr/local/bin/mdaudiobook > /dev/null
-	@echo '' | sudo tee -a /usr/local/bin/mdaudiobook > /dev/null
-	@echo '# Store current working directory' | sudo tee -a /usr/local/bin/mdaudiobook > /dev/null
-	@echo 'ORIGINAL_CWD="$$(pwd)"' | sudo tee -a /usr/local/bin/mdaudiobook > /dev/null
-	@echo '' | sudo tee -a /usr/local/bin/mdaudiobook > /dev/null
-	@echo '# Convert relative paths to absolute paths' | sudo tee -a /usr/local/bin/mdaudiobook > /dev/null
-	@echo 'args=()' | sudo tee -a /usr/local/bin/mdaudiobook > /dev/null
-	@echo 'for arg in "$$@"; do' | sudo tee -a /usr/local/bin/mdaudiobook > /dev/null
-	@echo '    # Check if argument looks like a file path (contains . or / and doesnt start with -)' | sudo tee -a /usr/local/bin/mdaudiobook > /dev/null
-	@echo '    if [[ "$$arg" == *.* || "$$arg" == */* ]] && [[ "$$arg" != -* ]]; then' | sudo tee -a /usr/local/bin/mdaudiobook > /dev/null
-	@echo '        # Convert to absolute path if its relative' | sudo tee -a /usr/local/bin/mdaudiobook > /dev/null
-	@echo '        if [[ "$$arg" != /* ]]; then' | sudo tee -a /usr/local/bin/mdaudiobook > /dev/null
-	@echo '            args+=("$$ORIGINAL_CWD/$$arg")' | sudo tee -a /usr/local/bin/mdaudiobook > /dev/null
-	@echo '        else' | sudo tee -a /usr/local/bin/mdaudiobook > /dev/null
-	@echo '            args+=("$$arg")' | sudo tee -a /usr/local/bin/mdaudiobook > /dev/null
-	@echo '        fi' | sudo tee -a /usr/local/bin/mdaudiobook > /dev/null
-	@echo '    else' | sudo tee -a /usr/local/bin/mdaudiobook > /dev/null
-	@echo '        args+=("$$arg")' | sudo tee -a /usr/local/bin/mdaudiobook > /dev/null
-	@echo '    fi' | sudo tee -a /usr/local/bin/mdaudiobook > /dev/null
-	@echo 'done' | sudo tee -a /usr/local/bin/mdaudiobook > /dev/null
-	@echo '' | sudo tee -a /usr/local/bin/mdaudiobook > /dev/null
-	@echo '# Activate virtual environment and execute Python script with absolute paths' | sudo tee -a /usr/local/bin/mdaudiobook > /dev/null
-	@echo 'cd "$$MDAUDIOBOOK_DIR"' | sudo tee -a /usr/local/bin/mdaudiobook > /dev/null
-	@echo '. venv/bin/activate && python scripts/process_audiobook.py "$${args[@]}" --output-dir "$$ORIGINAL_CWD"' | sudo tee -a /usr/local/bin/mdaudiobook > /dev/null
-	@sudo chmod +x /usr/local/bin/mdaudiobook
+	@echo "Installing mdaudiobook with pipx..."
+	@# Install using pipx for isolated CLI tool installation
+	pipx install .
+	@echo "✓ mdaudiobook installed successfully with pipx."
+	@echo "Run 'mdaudiobook --help' to get started."
 
 
 # Prompt for user configuration before install
@@ -279,9 +247,9 @@ install-prompt:
 
 # Remove from system PATH
 uninstall-system:
-	@echo "Uninstalling mdaudiobook from system..."
-	sudo rm -f /usr/local/bin/mdaudiobook
-	@echo "mdaudiobook uninstalled from system"
+	@echo "Uninstalling mdaudiobook with pipx..."
+	pipx uninstall mdaudiobook
+	@echo "✓ mdaudiobook uninstalled."
 
 # Package build
 package:
