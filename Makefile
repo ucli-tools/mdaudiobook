@@ -172,45 +172,43 @@ rebuild: clean build
 
 # Install to system PATH and setup user configuration
 install-system: install-prompt setup
-	@echo "Installing mdaudiobook to /usr/local/bin..."
-	@echo "Creating executable wrapper script..."
-	@MDAUDIOBOOK_DIR="$$(pwd)"; \
-	if [ ! -f "mdaudiobook" ]; then \
-		echo '#!/bin/bash' > mdaudiobook; \
-		echo '# mdaudiobook - System wrapper for mdaudiobook.py' >> mdaudiobook; \
-		echo '' >> mdaudiobook; \
-		echo '# Set mdaudiobook directory (absolute path)' >> mdaudiobook; \
-		echo "MDAUDIOBOOK_DIR=\"$$MDAUDIOBOOK_DIR\"" >> mdaudiobook; \
-		echo '' >> mdaudiobook; \
-		echo '# Store current working directory' >> mdaudiobook; \
-		echo 'ORIGINAL_CWD="$$(pwd)"' >> mdaudiobook; \
-		echo '' >> mdaudiobook; \
-		echo '# Convert relative paths to absolute paths' >> mdaudiobook; \
-		echo 'args=()' >> mdaudiobook; \
-		echo 'for arg in "$$@"; do' >> mdaudiobook; \
-		echo '    # Check if argument looks like a file path (contains . or / and doesnt start with -)' >> mdaudiobook; \
-		echo '    if [[ "$$arg" == *.* || "$$arg" == */* ]] && [[ "$$arg" != -* ]]; then' >> mdaudiobook; \
-		echo '        # Convert to absolute path if its relative' >> mdaudiobook; \
-		echo '        if [[ "$$arg" != /* ]]; then' >> mdaudiobook; \
-		echo '            args+=("$$ORIGINAL_CWD/$$arg")' >> mdaudiobook; \
-		echo '        else' >> mdaudiobook; \
-		echo '            args+=("$$arg")' >> mdaudiobook; \
-		echo '        fi' >> mdaudiobook; \
-		echo '    else' >> mdaudiobook; \
-		echo '        args+=("$$arg")' >> mdaudiobook; \
-		echo '    fi' >> mdaudiobook; \
-		echo 'done' >> mdaudiobook; \
-		echo '' >> mdaudiobook; \
-		echo '# Activate virtual environment and execute Python script with absolute paths' >> mdaudiobook; \
-		echo 'cd "$$MDAUDIOBOOK_DIR"' >> mdaudiobook; \
-		echo '. venv/bin/activate && python scripts/process_audiobook.py "$${args[@]}" --output-dir "$$ORIGINAL_CWD"' >> mdaudiobook; \
-		chmod +x mdaudiobook; \
-		echo "Created executable wrapper: mdaudiobook"; \
-	fi
-
-	@# Install executable
-	sudo cp mdaudiobook /usr/local/bin/mdaudiobook
-	sudo chmod +x /usr/local/bin/mdaudiobook
+	@echo "Installing mdaudiobook to /opt/ucli-tools/mdaudiobook..."
+	@# Create installation directory
+	sudo mkdir -p /opt/ucli-tools/mdaudiobook
+	@# Copy entire project to permanent location
+	sudo cp -r . /opt/ucli-tools/mdaudiobook/
+	@# Set proper ownership
+	sudo chown -R root:root /opt/ucli-tools/mdaudiobook
+	@# Create system wrapper script
+	@echo '#!/bin/bash' | sudo tee /usr/local/bin/mdaudiobook > /dev/null
+	@echo '# mdaudiobook - System wrapper for mdaudiobook.py' | sudo tee -a /usr/local/bin/mdaudiobook > /dev/null
+	@echo '' | sudo tee -a /usr/local/bin/mdaudiobook > /dev/null
+	@echo '# Set mdaudiobook directory (permanent installation)' | sudo tee -a /usr/local/bin/mdaudiobook > /dev/null
+	@echo 'MDAUDIOBOOK_DIR="/opt/ucli-tools/mdaudiobook"' | sudo tee -a /usr/local/bin/mdaudiobook > /dev/null
+	@echo '' | sudo tee -a /usr/local/bin/mdaudiobook > /dev/null
+	@echo '# Store current working directory' | sudo tee -a /usr/local/bin/mdaudiobook > /dev/null
+	@echo 'ORIGINAL_CWD="$$(pwd)"' | sudo tee -a /usr/local/bin/mdaudiobook > /dev/null
+	@echo '' | sudo tee -a /usr/local/bin/mdaudiobook > /dev/null
+	@echo '# Convert relative paths to absolute paths' | sudo tee -a /usr/local/bin/mdaudiobook > /dev/null
+	@echo 'args=()' | sudo tee -a /usr/local/bin/mdaudiobook > /dev/null
+	@echo 'for arg in "$$@"; do' | sudo tee -a /usr/local/bin/mdaudiobook > /dev/null
+	@echo '    # Check if argument looks like a file path (contains . or / and doesnt start with -)' | sudo tee -a /usr/local/bin/mdaudiobook > /dev/null
+	@echo '    if [[ "$$arg" == *.* || "$$arg" == */* ]] && [[ "$$arg" != -* ]]; then' | sudo tee -a /usr/local/bin/mdaudiobook > /dev/null
+	@echo '        # Convert to absolute path if its relative' | sudo tee -a /usr/local/bin/mdaudiobook > /dev/null
+	@echo '        if [[ "$$arg" != /* ]]; then' | sudo tee -a /usr/local/bin/mdaudiobook > /dev/null
+	@echo '            args+=("$$ORIGINAL_CWD/$$arg")' | sudo tee -a /usr/local/bin/mdaudiobook > /dev/null
+	@echo '        else' | sudo tee -a /usr/local/bin/mdaudiobook > /dev/null
+	@echo '            args+=("$$arg")' | sudo tee -a /usr/local/bin/mdaudiobook > /dev/null
+	@echo '        fi' | sudo tee -a /usr/local/bin/mdaudiobook > /dev/null
+	@echo '    else' | sudo tee -a /usr/local/bin/mdaudiobook > /dev/null
+	@echo '        args+=("$$arg")' | sudo tee -a /usr/local/bin/mdaudiobook > /dev/null
+	@echo '    fi' | sudo tee -a /usr/local/bin/mdaudiobook > /dev/null
+	@echo 'done' | sudo tee -a /usr/local/bin/mdaudiobook > /dev/null
+	@echo '' | sudo tee -a /usr/local/bin/mdaudiobook > /dev/null
+	@echo '# Activate virtual environment and execute Python script with absolute paths' | sudo tee -a /usr/local/bin/mdaudiobook > /dev/null
+	@echo 'cd "$$MDAUDIOBOOK_DIR"' | sudo tee -a /usr/local/bin/mdaudiobook > /dev/null
+	@echo '. venv/bin/activate && python scripts/process_audiobook.py "$${args[@]}" --output-dir "$$ORIGINAL_CWD"' | sudo tee -a /usr/local/bin/mdaudiobook > /dev/null
+	@sudo chmod +x /usr/local/bin/mdaudiobook
 
 
 # Prompt for user configuration before install
