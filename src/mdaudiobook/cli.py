@@ -54,10 +54,10 @@ def load_config(config_path: Optional[Path] = None) -> Dict[str, Any]:
 def extract_metadata(doc_structure, config: Dict[str, Any]) -> Dict[str, Any]:
     """Extract metadata from document structure"""
     metadata = {
-        'title': doc_structure.get('title', 'Untitled Audiobook'),
-        'author': doc_structure.get('author', 'Unknown Author'),
-        'description': doc_structure.get('description', ''),
-        'chapters': len(doc_structure.get('chapters', [])),
+        'title': doc_structure.metadata.get('title', doc_structure.title),
+        'author': doc_structure.metadata.get('author', 'Unknown Author'),
+        'description': doc_structure.metadata.get('description', ''),
+        'chapters': len(doc_structure.chapters),
         'processing_mode': config.get('processing', {}).get('mode', 'hybrid')
     }
     return metadata
@@ -158,24 +158,22 @@ Processing Modes:
         print("Stage 1: Processing markdown...")
         markdown_processor = MarkdownProcessor(config)
         
-        with open(args.input_file, 'r', encoding='utf-8') as f:
-            markdown_content = f.read()
-        
-        doc_structure = markdown_processor.process_markdown(markdown_content)
+        doc_structure = markdown_processor.process_document(args.input_file)
         
         if args.verbose:
-            print(f"  - Processed {len(doc_structure.get('chapters', []))} chapters")
-            print(f"  - Total content length: {len(markdown_content)} characters")
-            print(f"  - Document title: {doc_structure.get('title', 'Untitled')}")
+            print(f"  - Processed {len(doc_structure.chapters)} chapters")
+            print(f"  - Document title: {doc_structure.title}")
+            print(f"  - Math expressions: {len(doc_structure.math_expressions)}")
+            print(f"  - Citations: {len(doc_structure.citations)}")
         
         # Stage 2: Text Enhancement
         print("Stage 2: Enhancing text for audio...")
         text_enhancer = TextEnhancer(config, processing_mode)
         
-        enhanced_text = text_enhancer.enhance_text(doc_structure)
+        enhanced_text = text_enhancer.enhance_document(doc_structure)
         
         # Validate enhanced text
-        is_valid, issues = text_enhancer.validate_enhanced_text(enhanced_text)
+        is_valid, issues = text_enhancer.validate_enhancement(enhanced_text)
         if not is_valid:
             print("Warning: Text enhancement issues detected:")
             for issue in issues:
