@@ -1,4 +1,4 @@
-# mdaudiobook - Core Dependencies
+# mdaudiobook - Core Dependencies (Minimal)
 # Professional Markdown to Audiobook Pipeline
 
 # Core Processing
@@ -7,47 +7,26 @@ pyyaml>=6.0
 python-frontmatter>=1.0.0
 jinja2>=3.1.2
 
-# Text Processing and Enhancement
+# Text Processing
 regex>=2023.6.3
 nltk>=3.8.1
 beautifulsoup4>=4.12.2
 lxml>=4.9.3
 
-# Audio Processing
+# Basic Audio Processing
 pydub>=0.25.1
 mutagen>=1.47.0
-librosa>=0.10.1
-soundfile>=0.12.1
-
-# TTS Providers (Python packages only)
-# Note: piper-tts, espeak-ng, festival are system packages
-# Install via: sudo apt install espeak-ng festival piper-tts (or equivalent).
-
-# TTS Providers - API (optional)
-elevenlabs>=0.2.24
-azure-cognitiveservices-speech>=1.31.0
-google-cloud-texttospeech>=2.14.1
-
-# AI Enhancement - Local
-ollama>=0.1.7
-transformers>=4.33.2
-torch>=2.0.1
-
-# AI Enhancement - API (optional)
-openai>=0.28.0
-anthropic>=0.3.11
-
-# HTTP and API
-requests>=2.31.0
-httpx>=0.24.1
-aiohttp>=3.8.5
 
 # Utilities
 click>=8.1.7
 rich>=13.5.2
 tqdm>=4.66.1
 python-dotenv>=1.0.0
-pathlib2>=2.3.7
+
+# Note: For advanced features, install optional dependencies:
+# pipx inject mdaudiobook google-cloud-texttospeech  # For Google TTS
+# pipx inject mdaudiobook torch transformers         # For local AI
+# pipx inject mdaudiobook elevenlabs openai          # For other APIs
 
 # Configuration and Validation
 pydantic>=2.3.0

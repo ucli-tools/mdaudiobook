@@ -103,30 +103,174 @@ def extract_metadata(doc_structure, config: Dict[str, Any]) -> Dict[str, Any]:
     return metadata
 
 
+def install_google_dependencies():
+    """Install Google Cloud dependencies using pipx inject"""
+    print("⏳ Installing Google Cloud dependencies...")
+    try:
+        import subprocess
+        result = subprocess.run(
+            ["pipx", "inject", "mdaudiobook", "google-cloud-texttospeech"],
+            capture_output=True,
+            text=True,
+            check=True
+        )
+        print("✓ Google Cloud dependencies installed successfully")
+        return True
+    except subprocess.CalledProcessError as e:
+        print(f"❌ Failed to install dependencies: {e}")
+        print("Please install manually:")
+        print("  pipx inject mdaudiobook google-cloud-texttospeech")
+        return False
+    except FileNotFoundError:
+        print("❌ pipx not found. Please install pipx first or install dependencies manually:")
+        print("  pipx inject mdaudiobook google-cloud-texttospeech")
+        return False
+
+
+def setup_google_credentials(install_deps=True):
+    """Interactive setup for Google Cloud credentials"""
+    print("⚙️  Google Cloud TTS Setup")
+    print("=" * 50)
+    print()
+    
+    # Check if dependencies are installed
+    try:
+        import google.cloud.texttospeech
+        print("✓ Google Cloud dependencies are already installed")
+    except ImportError:
+        if install_deps:
+            print("⚠️  Google Cloud dependencies not found. Installing automatically...")
+            print()
+            if not install_google_dependencies():
+                return False
+            print()
+            # Try importing again after installation
+            try:
+                import google.cloud.texttospeech
+                print("✓ Dependencies installed and verified")
+            except ImportError:
+                print("❌ Dependencies installed but import failed. Please restart your terminal and try again.")
+                return False
+        else:
+            print("⚠️  Google Cloud dependencies not found!")
+            print()
+            print("Please install them first:")
+            print("  pipx inject mdaudiobook google-cloud-texttospeech")
+            print()
+            return False
+    
+    # Check if credentials already exist
+    existing_creds = find_google_credentials()
+    if existing_creds:
+        print(f"✓ Found existing credentials: {existing_creds}")
+        response = input("\nDo you want to update them? (y/N): ").strip().lower()
+        if response not in ['y', 'yes']:
+            print("Setup cancelled.")
+            return True
+    
+    print()
+    print("Step 1: Google Cloud Project Setup")
+    print("1. Go to https://console.cloud.google.com/")
+    print("2. Create a new project or select an existing one")
+    print("3. Enable the Text-to-Speech API")
+    print("4. Go to 'IAM & Admin' > 'Service Accounts'")
+    print("5. Create a new service account")
+    print("6. Download the JSON key file")
+    print()
+    
+    # Get credentials file path
+    while True:
+        creds_path = input("Enter the path to your Google credentials JSON file: ").strip()
+        if not creds_path:
+            print("Setup cancelled.")
+            return False
+        
+        creds_path = Path(creds_path).expanduser().resolve()
+        if creds_path.exists():
+            break
+        else:
+            print(f"File not found: {creds_path}")
+            print("Please check the path and try again.")
+    
+    # Create config directory
+    config_dir = Path.home() / '.config' / 'mdaudiobook'
+    config_dir.mkdir(parents=True, exist_ok=True)
+    
+    # Copy credentials
+    target_path = config_dir / 'google-credentials.json'
+    try:
+        import shutil
+        shutil.copy2(creds_path, target_path)
+        print(f"✓ Credentials copied to: {target_path}")
+    except Exception as e:
+        print(f"❌ Error copying credentials: {e}")
+        return False
+    
+    # Test credentials
+    print("\nTesting credentials...")
+    try:
+        os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = str(target_path)
+        from google.cloud import texttospeech
+        client = texttospeech.TextToSpeechClient()
+        voices = client.list_voices()
+        print(f"✓ Success! Found {len(voices.voices)} available voices")
+        print()
+        print("✓ Google Cloud TTS is ready to use!")
+        print("\nYou can now use:")
+        print("  mdaudiobook document.md --mode api")
+        print("  mdaudiobook document.md --mode hybrid")
+        return True
+    except Exception as e:
+        print(f"❌ Credential test failed: {e}")
+        print("Please check your credentials and try again.")
+        return False
+
+
 def main():
-    """Main CLI entry point for mdaudiobook."""
+    """Main entry point for the mdaudiobook CLI"""
     parser = argparse.ArgumentParser(
         description="Professional Markdown to Audiobook Pipeline for Academic and Technical Content",
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="""
-Examples:
+        epilog="""Examples:
   mdaudiobook document.md
   mdaudiobook document.md --output-dir ./audiobooks
   mdaudiobook document.md --config custom.yaml --mode api
   mdaudiobook document.md --verbose --dry-run
+  
+  # Google Cloud TTS Setup (includes dependency installation):
+  mdaudiobook --setup-google
+  
+  # Advanced: Skip automatic dependency installation:
+  mdaudiobook --setup-google --no-install-deps
 
 Processing Modes:
-  basic     - Simple text-to-speech conversion
+  basic     - Simple text-to-speech conversion (works immediately)
   local-ai  - Enhanced processing with local AI models
   api       - Cloud-based processing with external APIs
   hybrid    - Combination of local and cloud processing (default)
+
+Setup:
+  After installation, run 'mdaudiobook --setup-google' for premium TTS.
+  This will automatically install Google Cloud dependencies and guide
+  you through credential configuration.
         """
     )
     
     parser.add_argument(
         "input_file",
         type=Path,
+        nargs='?',
         help="The path to the input Markdown file"
+    )
+    parser.add_argument(
+        "--setup-google",
+        action="store_true",
+        help="Interactive setup for Google Cloud TTS (includes dependency installation)"
+    )
+    parser.add_argument(
+        "--no-install-deps",
+        action="store_true",
+        help="Skip automatic dependency installation (use with --setup-google)"
     )
     parser.add_argument(
         "--output-dir",
@@ -157,6 +301,20 @@ Processing Modes:
     )
     
     args = parser.parse_args()
+    
+    # Handle setup command
+    if args.setup_google:
+        # Check if --no-install-deps is used without --setup-google
+        if args.no_install_deps and not args.setup_google:
+            parser.error("--no-install-deps can only be used with --setup-google")
+        
+        install_deps = not args.no_install_deps
+        success = setup_google_credentials(install_deps=install_deps)
+        sys.exit(0 if success else 1)
+    
+    # Validate input file is provided for normal processing
+    if not args.input_file:
+        parser.error("input_file is required (unless using --setup-google)")
     
     # Load environment variables
     load_dotenv()
@@ -191,10 +349,12 @@ Processing Modes:
                 print("")
                 print("For API-based text-to-speech, you need Google Cloud credentials.")
                 print("")
-                print("To set up credentials:")
-                print("1. Create a Google Cloud project and enable Text-to-Speech API")
-                print("2. Create a service account and download the JSON key file")
-                print("3. Place the file in one of these locations:")
+                print("To set up Google Cloud TTS:")
+                print("1. Install Google Cloud dependencies:")
+                print("   pipx inject mdaudiobook google-cloud-texttospeech")
+                print("2. Create a Google Cloud project and enable Text-to-Speech API")
+                print("3. Create a service account and download the JSON key file")
+                print("4. Place the file in one of these locations:")
                 print("   - ~/.config/mdaudiobook/google-credentials.json")
                 print("   - ~/.config/mdaudiobook/credentials.json")
                 print("   - Set GOOGLE_APPLICATION_CREDENTIALS environment variable")
