@@ -345,24 +345,14 @@ Setup:
         if processing_mode in ['api', 'hybrid']:
             google_creds = find_google_credentials()
             if not google_creds:
-                print("⚠️  Warning: Google Cloud credentials not found!")
+                print(f"{processing_mode.title()} mode by default")
+                print("No google credentials found")
                 print("")
-                print("For API-based text-to-speech, you need Google Cloud credentials.")
+                print("To set google credentials, run mdaudiobook --setup-google")
                 print("")
-                print("To set up Google Cloud TTS:")
-                print("1. Install Google Cloud dependencies:")
-                print("   pipx inject mdaudiobook google-cloud-texttospeech")
-                print("2. Create a Google Cloud project and enable Text-to-Speech API")
-                print("3. Create a service account and download the JSON key file")
-                print("4. Place the file in one of these locations:")
-                print("   - ~/.config/mdaudiobook/google-credentials.json")
-                print("   - ~/.config/mdaudiobook/credentials.json")
-                print("   - Set GOOGLE_APPLICATION_CREDENTIALS environment variable")
-                print("")
-                print("Alternatively, use --mode basic for offline text-to-speech.")
-                print("")
+                # Set flag to suppress Google TTS warnings during processing
+                os.environ['MDAUDIOBOOK_SUPPRESS_GOOGLE_WARNINGS'] = '1'
                 if not args.dry_run:
-                    print("Continuing with basic mode...")
                     processing_mode = 'basic'
                     config.setdefault('processing', {})['mode'] = 'basic'
         

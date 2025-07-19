@@ -544,7 +544,10 @@ class AudiobookGenerator:
             return audio_segment
             
         except ImportError:
-            print("Warning: Google Cloud TTS library not installed. Install with: pip install google-cloud-texttospeech")
+            # Only show warning if not suppressed
+            import os
+            if not os.getenv('MDAUDIOBOOK_SUPPRESS_GOOGLE_WARNINGS'):
+                print("Warning: Google Cloud TTS library not installed. Install with: pip install google-cloud-texttospeech")
             return self._generate_fallback_audio(text)
         except Exception as e:
             print(f"Google TTS error: {e}")

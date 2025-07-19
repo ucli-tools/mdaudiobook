@@ -37,10 +37,12 @@ ucli build mdaudiobook
 mdaudiobook document.md --mode basic
 ```
 
-#### Option 2: Via pipx (Direct)
+#### Option 2: Manual Installation
 ```bash
-# Install core package
-pipx install mdaudiobook
+# Clone and install locally
+git clone https://github.com/ucli-tools/mdaudiobook.git
+cd mdaudiobook
+pipx install .
 
 # Test basic functionality
 mdaudiobook document.md --mode basic
