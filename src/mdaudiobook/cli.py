@@ -19,6 +19,30 @@ from mdaudiobook.text_enhancer import TextEnhancer
 from mdaudiobook.audiobook_generator import AudiobookGenerator
 
 
+def find_google_credentials() -> Optional[str]:
+    """Find Google Cloud credentials in order of preference"""
+    locations = [
+        # 1. Environment variable (standard Google Cloud approach)
+        os.getenv('GOOGLE_APPLICATION_CREDENTIALS'),
+        
+        # 2. User config directory (mdaudiobook specific)
+        str(Path.home() / '.config' / 'mdaudiobook' / 'google-credentials.json'),
+        str(Path.home() / '.config' / 'mdaudiobook' / 'credentials.json'),
+        
+        # 3. Default Google Cloud location
+        str(Path.home() / '.config' / 'gcloud' / 'application_default_credentials.json'),
+        
+        # 4. Project directory (for local development)
+        './credentials/service-account.json',
+        './credentials.json',
+    ]
+    
+    for location in locations:
+        if location and Path(location).exists():
+            return location
+    return None
+
+
 def load_config(config_path: Optional[Path] = None) -> Dict[str, Any]:
     """Load configuration from YAML file"""
     if config_path is None:
@@ -35,7 +59,7 @@ def load_config(config_path: Optional[Path] = None) -> Dict[str, Any]:
                 break
         else:
             # Use default configuration
-            return {
+            config = {
                 'processing': {
                     'mode': 'hybrid',
                     'chunk_size': 1000,
@@ -46,9 +70,25 @@ def load_config(config_path: Optional[Path] = None) -> Dict[str, Any]:
                     'quality': 'high'
                 }
             }
+            
+            # Auto-detect Google credentials and set environment variable
+            google_creds = find_google_credentials()
+            if google_creds:
+                os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = google_creds
+                print(f"✓ Found Google Cloud credentials: {google_creds}")
+            
+            return config
     
     with open(config_path, 'r') as f:
-        return yaml.safe_load(f)
+        config = yaml.safe_load(f)
+    
+    # Auto-detect Google credentials and set environment variable
+    google_creds = find_google_credentials()
+    if google_creds:
+        os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = google_creds
+        print(f"✓ Found Google Cloud credentials: {google_creds}")
+    
+    return config
 
 
 def extract_metadata(doc_structure, config: Dict[str, Any]) -> Dict[str, Any]:
@@ -142,6 +182,29 @@ Processing Modes:
             config.setdefault('processing', {})['mode'] = args.mode
         
         processing_mode = config.get('processing', {}).get('mode', 'hybrid')
+        
+        # Check for Google credentials if using API mode
+        if processing_mode in ['api', 'hybrid']:
+            google_creds = find_google_credentials()
+            if not google_creds:
+                print("⚠️  Warning: Google Cloud credentials not found!")
+                print("")
+                print("For API-based text-to-speech, you need Google Cloud credentials.")
+                print("")
+                print("To set up credentials:")
+                print("1. Create a Google Cloud project and enable Text-to-Speech API")
+                print("2. Create a service account and download the JSON key file")
+                print("3. Place the file in one of these locations:")
+                print("   - ~/.config/mdaudiobook/google-credentials.json")
+                print("   - ~/.config/mdaudiobook/credentials.json")
+                print("   - Set GOOGLE_APPLICATION_CREDENTIALS environment variable")
+                print("")
+                print("Alternatively, use --mode basic for offline text-to-speech.")
+                print("")
+                if not args.dry_run:
+                    print("Continuing with basic mode...")
+                    processing_mode = 'basic'
+                    config.setdefault('processing', {})['mode'] = 'basic'
         
         if args.verbose:
             print(f"mdaudiobook - Professional Markdown to Audiobook Pipeline")
