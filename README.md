@@ -1,267 +1,171 @@
 # mdaudiobook
 
-[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
-[![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-yellow.svg)](https://opensource.org/licenses/Apache-2.0)
-[![ucli-tools](https://img.shields.io/badge/ucli--tools-ecosystem-green.svg)](https://github.com/ucli-tools)
+Markdown books to audiobooks. The same Markdown that
+[mdtexpdf](https://github.com/ucli-tools/mdtexpdf) turns into a PDF and an EPUB
+(and that [docx2md](https://github.com/ucli-tools/docx2md) can produce from a
+Word file) becomes store-ready audio: one MP3 per chapter and an M4B with
+chapter marks and cover, narrated by a neural voice that runs on your own
+computer.
 
-**Professional Markdown to Audiobook Pipeline for Academic and Technical Content**
+The pipeline is **script → check → voice → master → verify**, and every step
+can be checked against the one before it.
 
-`mdaudiobook` converts Markdown documents into high-quality audiobooks with intelligent handling of mathematical expressions, citations, and academic syntax. Features a minimal core installation with optional dependencies for advanced features.
+- **Script.** pandoc reads the book, including raw LaTeX figures and tables,
+  and mdaudiobook writes the exact words the listener will hear, as a text
+  file you can read before any audio exists.
+- **Check.** Can a listener get everything a reader sees? A figure without a
+  caption, a drawing outside a figure, a table without a caption, an equation
+  that cannot be spoken, letters no voice can pronounce, a name the voice does
+  not know: each fails the check, before a minute of audio is spent.
+- **Voice.** Sentence by sentence, cached, so an edited book re-voices only the
+  sentences that changed. Chapters are written to disk as they are made, so a
+  fifty-hour book never sits in memory, and several chapters are voiced at once.
+- **Master.** Levelled and encoded to the audiobook stores' rules, then measured
+  again as encoded.
+- **Verify.** Whisper transcribes the audio and it is aligned with the script:
+  a dropped sentence or a garbled stretch fails the build.
 
----
+## What the listener hears for what the reader sees
 
-## ✨ Key Features
+| In the book | In the audiobook |
+|---|---|
+| Headings | Read, with a longer pause; chapter headings start a new file, part titles are announced at the start of the next chapter |
+| Mathematics | Read by the [Speech Rule Engine](https://github.com/Speech-Rule-Engine/speech-rule-engine) (the engine screen readers use) in ClearSpeak style: "the fraction with numerator 1 and denominator n squared" |
+| A display equation the book itself reads aloud in the next line | The book's own reading (setting `equation_readings: after`) |
+| Figures | "Figure." and the caption; the drawing itself is skipped |
+| Tables | "Table." and the caption, then each row with its column names: "180 degrees. Fraction of a turn: a half." |
+| Footnotes | "Footnote." and the note, after its paragraph |
+| Abbreviations, units, symbols, URLs | Said the way a narrator says them: "for example", "40 hertz", "50 percent", "library dot example dot org" |
+| Words in Greek, Cyrillic, Hebrew, ... | Pronounced in their own language (through espeak-ng) |
+| Hieroglyphs, cuneiform, other signs with no reading | A spoken form the book gives (see below); `check` fails until it does |
+| Code blocks | Not read (reported by `check`) |
 
-- **🚀 Fast Installation:** Minimal 50MB core install, add features as needed
-- **🎯 Interactive Setup:** Guided configuration for Google Cloud TTS and other services
-- **🧠 Smart Processing:** Converts LaTeX math to natural speech, handles academic syntax
-- **🔧 Flexible Modes:** Basic, local AI, cloud API, and hybrid processing options
-- **📚 Academic Focus:** Designed for technical documents, research papers, and educational content
-- **🎵 Professional Output:** Chapterized `.m4b` audiobooks with metadata and navigation
+## Install
 
-## 🚀 Quick Start
-
-### Prerequisites
-
-- Python 3.8+
-- [ucli](https://github.com/ucli-tools/ucli) (recommended) or pipx
-
-### Installation Options
-
-#### Option 1: Via ucli (Recommended)
-```bash
-# Install mdaudiobook with minimal dependencies (~50MB)
-ucli build mdaudiobook
-
-# Start using immediately with basic TTS
-mdaudiobook document.md --mode basic
-```
-
-#### Option 2: Manual Installation
-```bash
-# Clone and install locally
-git clone https://github.com/ucli-tools/mdaudiobook.git
-cd mdaudiobook
-pipx install .
-
-# Test basic functionality
-mdaudiobook document.md --mode basic
-```
-
-### Adding Optional Features
-
-mdaudiobook uses a minimal core installation. Add features as needed:
-
-#### Google Cloud TTS (Most Popular)
-```bash
-# One-command setup: installs dependencies + configures credentials
-mdaudiobook --setup-google
-
-# Use premium TTS (works automatically with hybrid mode)
-mdaudiobook document.md
-```
-
-**Advanced users:**
-```bash
-# Skip automatic dependency installation
-mdaudiobook --setup-google --no-install-deps
-```
-
-#### Other Cloud TTS Services
-```bash
-# ElevenLabs, Azure, OpenAI
-pipx inject mdaudiobook elevenlabs azure-cognitiveservices-speech openai
-```
-
-#### Local AI Processing
-```bash
-# For offline AI enhancement (large download ~2GB)
-pipx inject mdaudiobook torch transformers
-```
-
-#### Everything (Power Users)
-```bash
-# Install all optional features
-pipx inject mdaudiobook google-cloud-texttospeech elevenlabs torch transformers librosa
-```
-
-### Verify Installation
-```bash
-# Check help and available modes
-mdaudiobook --help
-
-# Test with a sample document
-mdaudiobook example.md --verbose --dry-run
-```
-
-## 🔧 Usage
-
-### Basic Commands
+Needs `pandoc`, `ffmpeg`, Node.js (`node` and `npm`, for the mathematics) and
+[uv](https://docs.astral.sh/uv/).
 
 ```bash
-# Basic audiobook generation (works immediately after install)
-mdaudiobook document.md
-
-# Use specific processing mode
-mdaudiobook document.md --mode basic      # Offline TTS
-mdaudiobook document.md --mode api        # Cloud TTS (requires setup)
-mdaudiobook document.md --mode hybrid     # Best available (default)
-
-# Verbose output and dry-run for testing
-mdaudiobook document.md --verbose --dry-run
-
-# Custom output directory
-mdaudiobook document.md --output-dir ./audiobooks
+make build            # installs the mdaudiobook command (CPU)
+mdaudiobook setup     # once: the maths speech engine and the voice model
 ```
 
-### Interactive Setup
+On a machine with an NVIDIA GPU use `make build-gpu` and build with
+`--device cuda`: the same code, much faster voicing.
+
+## Use
 
 ```bash
-# Step-by-step Google Cloud TTS setup
-mdaudiobook --setup-google
-
-# Get help and see all options
-mdaudiobook --help
+mdaudiobook script book.md          # book_audiobook/script.txt: read it, it is what will be spoken
+mdaudiobook check book.md           # what a listener would miss; exit 1 if anything
+mdaudiobook names book.md           # every name the voice guesses, spoken, with a list, for review
+mdaudiobook build book.md --chapters 3      # one chapter: listen before committing to the whole book
+mdaudiobook build book.md --workers 3 --threads 8
+mdaudiobook verify book.md          # compare built audio with its script again
+mdaudiobook voices                  # the available voices
 ```
 
-### Processing Modes
+`build` runs check, voice, master and verify. `--chapters` takes `3`, `2-5`,
+`1,4` or words from a chapter title. Output goes to `<book>_audiobook/` beside
+the book:
 
-| Mode | Dependencies | Features | Use Case |
-|------|-------------|----------|----------|
-| `basic` | Core only | System TTS, fast | Quick conversion, testing |
-| `local-ai` | + torch, transformers | Local AI enhancement | Offline, privacy-focused |
-| `api` | + cloud TTS packages | Premium voices, quality | Production audiobooks |
-| `hybrid` | Any available | Best of all modes | Recommended default |
+```
+script.txt, script.json    the narration script
+cache/                     one audio file per sentence (keep it: rebuilds reuse it)
+chapters/NN.wav            voiced chapters
+mp3/NN - Title.mp3         store files: 192 kbps CBR, 44.1 kHz, tagged, with cover
+<book>.m4b                 the whole book with chapter marks and cover
+master.json, verify.json   measurements and the verify report
+```
 
-## ⚙️ Configuration
+## Settings in the book
 
-### Document Configuration (Optional)
-
-Add YAML frontmatter to your Markdown files for custom settings:
+Under an `audiobook:` key in the YAML front matter (or in `metadata.yaml`
+beside the book); the title, subtitle, author, date and `cover_image` come from
+the book's ordinary metadata.
 
 ```yaml
----
-title: "Real and Complex Mathematical Analysis"
-author: "Dr. Jane Smith"
-processing_mode: "hybrid"  # basic, local-ai, api, hybrid
-output_format: "m4b"       # m4b, mp3, wav
-voices:
-  main_narrator: "google_en-us-neural2-d"
-  math_voice: "google_en-us-wavenet-c"
----
-
-# Your content here...
+audiobook:
+  voice: am_michael               # see `mdaudiobook voices`
+  speed: 1.0
+  lexicon: audiobook/pronunciations.yaml
+  equation_readings: after        # or none
+  chapter_level: 2                # headings at this level or above start a new file
+  cover: img/cover_square.jpg     # square, at least 2400x2400; else cover_image cropped to a square
+  narrator: "a synthetic voice"   # credited in the opening and closing credits
+  credits: true
+  max_file_minutes: 110           # longer chapters are split at a heading
 ```
 
-### Google Cloud TTS Setup
+## Markup for listeners
 
-Use the one-command setup for easy configuration:
+The PDF and EPUB print these as usual; only the audiobook reads them
+differently.
+
+```markdown
+The tally [𓏺𓏺𓏺]{speak="three vertical strokes"} stands for three.
+
+Three strokes [(𓏺𓏺𓏺)]{speak=""} mean three.
+
+::: {.print-only speak="In the chart, each number from one to nine is that many strokes."}
+(a chart of numerals, as a table or raw LaTeX)
+:::
+```
+
+`speak="..."` replaces the content in the audiobook; `speak=""` silences it
+(for signs already described in words beside them); a `.print-only` block
+without `speak` is skipped and reported by `check`.
+
+## Pronunciations
+
+The voice guesses words its dictionary lacks. Names matter, and a guess is
+often wrong ("Hegel" read "Hejel"), so a book keeps a lexicon of IPA:
+
+```yaml
+Leibniz: ˈlaɪbnɪts
+Hegel: ˈheɪɡəl
+Nguyen:
+  ipa: ˈŋwɪn
+  guess: true          # not yet checked by ear: `check` lists it, `names` marks it
+```
+
+`check` fails on any name the voice does not know that the lexicon does not
+give, and lists entries still marked `guess`. `mdaudiobook names` speaks every
+name, one after another, with a timed list, so a whole book's names can be
+checked by ear in minutes.
+
+## Store specifications
+
+The mastering step targets the strictest common rules (Audible's ACX), which
+the other stores accept: MP3 192 kbps constant bit rate, 44.1 kHz; one file per
+chapter and none over 120 minutes; RMS between -23 and -18 dB; peaks at or
+below -3 dB; noise floor at or below -60 dB; half a second to a second of
+silence at the head and one to five seconds at the tail. Every file is measured
+after encoding and reported. A square cover of at least 2400 by 2400 pixels
+goes into every file.
+
+Stores differ on narration by a synthetic voice; check each store's current
+rules before publishing. The opening and closing credits name the narrator,
+"a synthetic voice" unless the book says otherwise.
+
+## Voices and engines
+
+The default engine is [Kokoro-82M](https://huggingface.co/hexgrad/Kokoro-82M)
+(Apache-2.0), which runs on a CPU at roughly real time and much faster on a
+GPU. Everything but the voicing (script, cache, mastering, checks) is shared,
+so a book can move to another engine by a setting once it exists: subclass
+`Engine` in `src/mdaudiobook/engines/`, register it, and make its `identity`
+change whenever its sound would, because the sentence cache is keyed on it.
+
+## Tests
 
 ```bash
-# Complete setup: installs dependencies + configures credentials
-mdaudiobook --setup-google
+make test
 ```
 
-The setup will:
-1. **Automatically install Google Cloud dependencies** (pipx inject)
-2. Guide you through Google Cloud project creation
-3. Help you download and configure service account credentials
-4. Test the connection to ensure everything works
-5. Save credentials to `~/.config/mdaudiobook/google-credentials.json`
+The tests build the example book in `tests/fixtures/`, which exercises every
+case above.
 
-**Advanced users who want manual dependency control:**
-```bash
-# Skip automatic dependency installation
-mdaudiobook --setup-google --no-install-deps
-```
+## Licence
 
-### Manual Configuration (Advanced)
-
-For advanced users, credentials can be placed in:
-- `~/.config/mdaudiobook/google-credentials.json`
-- `~/.config/mdaudiobook/credentials.json`
-- Set `GOOGLE_APPLICATION_CREDENTIALS` environment variable
-- Default Google Cloud location: `~/.config/gcloud/application_default_credentials.json`
-
-## 📦 Optional Dependencies
-
-mdaudiobook uses a minimal core installation (~50MB) with optional features:
-
-### Installation Sizes
-| Package Set | Size | Command |
-|-------------|------|----------|
-| **Core** | ~50MB | `ucli build mdaudiobook` |
-| **+ Google Cloud** | ~80MB | `pipx inject mdaudiobook google-cloud-texttospeech` |
-| **+ All APIs** | ~150MB | `pipx inject mdaudiobook elevenlabs openai azure-cognitiveservices-speech` |
-| **+ Local AI** | ~2GB | `pipx inject mdaudiobook torch transformers` |
-| **Everything** | ~2.5GB | `pipx inject mdaudiobook google-cloud-texttospeech elevenlabs torch transformers librosa` |
-
-### Feature Categories
-- **`google`**: Google Cloud TTS only (most popular)
-- **`cloud-tts`**: All cloud TTS APIs (ElevenLabs, Azure, OpenAI)
-- **`local-ai`**: Offline AI processing with torch/transformers
-- **`audio`**: Advanced audio processing with librosa
-- **`api`**: All API features combined
-- **`all`**: Everything for power users
-
-See [OPTIONAL_DEPENDENCIES.md](OPTIONAL_DEPENDENCIES.md) for detailed installation strategies.
-
-## 📁 Project Structure
-
-```
-mdaudiobook/
-├── README.md                    # This file
-├── OPTIONAL_DEPENDENCIES.md     # Detailed dependency guide
-├── LICENSE                     # Apache 2.0 license
-├── setup.py                    # Python package configuration
-├── requirements.txt            # Minimal core dependencies
-├── Makefile                    # ucli integration
-├── src/
-│   └── mdaudiobook/            # Main package
-│       ├── cli.py              # Command-line interface
-│       ├── markdown_processor.py
-│       ├── text_enhancer.py
-│       ├── audiobook_generator.py
-│       └── config_manager.py
-├── documents/                  # Example markdown files
-└── tests/                      # Automated tests
-```
-
-## 🎯 User Experience Highlights
-
-### For Beginners
-```bash
-# Install and start using immediately
-ucli build mdaudiobook
-mdaudiobook document.md  # Works right away with basic TTS
-```
-
-### For Google Cloud Users
-```bash
-# One-command setup (installs dependencies + configures credentials)
-mdaudiobook --setup-google
-mdaudiobook document.md  # Premium quality automatically
-```
-
-### For Power Users
-```bash
-# Install everything for maximum features
-pipx inject mdaudiobook google-cloud-texttospeech elevenlabs torch transformers
-mdaudiobook document.md --mode hybrid  # Best of all worlds
-```
-
-### Key Benefits
-- ⚡ **Fast**: 50MB core install vs 2GB+ traditional approach
-- 🎯 **Guided**: Interactive setup eliminates configuration confusion
-- 🔧 **Flexible**: Add only the features you need
-- 🚀 **Modern**: Uses pipx for clean, isolated installations
-- 📚 **Academic**: Designed for technical documents and research
-
-## 📄 License
-
-This project is licensed under the Apache License 2.0. See the [LICENSE](LICENSE) file for details.
-
----
-
-*Part of the `ucli-tools` ecosystem - Professional tools for academic and technical content creation.*
-
+Apache-2.0.

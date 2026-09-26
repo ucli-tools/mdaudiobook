@@ -1,0 +1,46 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mdaudiobook"
+version = "2.0.0"
+description = "Markdown books to audiobooks: a reviewable narration script, local neural voices, store-ready files, and checks that nothing was lost"
+readme = "README.md"
+license = { text = "Apache-2.0" }
+requires-python = ">=3.10,<3.13"
+authors = [{ name = "ucli-tools" }]
+keywords = ["audiobook", "markdown", "pandoc", "text-to-speech", "kokoro", "m4b", "accessibility", "mathematics"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: POSIX :: Linux",
+    "Topic :: Multimedia :: Sound/Audio :: Speech",
+    "Topic :: Text Processing :: Markup",
+]
+dependencies = [
+    "pyyaml>=6.0",
+    "numpy>=1.24",
+    "soundfile>=0.12",
+    "kokoro>=0.9.4",
+    "misaki[en]>=0.9.4",
+    "en_core_web_sm @ https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl",
+    "faster-whisper>=1.1",
+    "jiwer>=3.0",
+    "num2words>=0.5.13",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8"]
+
+[project.scripts]
+mdaudiobook = "mdaudiobook.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+mdaudiobook = ["js/*.js"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
