@@ -22,8 +22,11 @@ can be checked against the one before it.
   fifty-hour book never sits in memory, and several chapters are voiced at once.
 - **Master.** Levelled and encoded to the audiobook stores' rules, then measured
   again as encoded.
-- **Verify.** Whisper transcribes the audio and it is aligned with the script:
-  a dropped sentence or a garbled stretch fails the build.
+- **Verify.** Whisper transcribes the audio in windows of whole sentences, cut
+  at the times synthesis recorded and never longer than Whisper's own
+  30-second window (over longer audio it drifts and skips, and would report as
+  missing what was said); each window is aligned with its script: a dropped
+  sentence or a garbled stretch fails the build, with its time and its text.
 
 ## What the listener hears for what the reader sees
 

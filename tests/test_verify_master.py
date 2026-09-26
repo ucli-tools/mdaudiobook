@@ -51,3 +51,11 @@ def test_mastering_meets_store_specs(tmp_path):
     chapters = subprocess.run(["ffprobe", "-v", "error", "-show_chapters", "-of", "csv=p=0", str(m4b)],
                               capture_output=True, text=True).stdout
     assert "One" in chapters
+
+
+def test_sentences_are_grouped_into_short_windows():
+    from mdaudiobook.verify import _windows
+    times = [[0, 5], [5, 12], [12, 18], [18, 30], [30, 55], [55, 58]]
+    texts = ["a", "b", "c", "d", "e", "f"]
+    # closes at 15 s of speech; never lets a window pass 28 s
+    assert _windows(times, texts) == [(0, 18, "a b c"), (18, 30, "d"), (30, 55, "e"), (55, 58, "f")]

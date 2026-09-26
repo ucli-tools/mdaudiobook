@@ -33,6 +33,8 @@ def _voice_chapter(job):
     engine = engines.get(engine_name, **engine_kw)
     sr = engine.sample_rate
     new = cached = 0
+    frames = 0
+    times = []          # where each sentence starts and ends in the chapter, in seconds
     tmp = Path(str(out_wav) + ".part")
     with sf.SoundFile(tmp, "w", samplerate=sr, channels=1, format="WAV", subtype="PCM_16") as out:
         for seg in chapter["segments"]:
@@ -52,9 +54,12 @@ def _voice_chapter(job):
                     new += 1
                 out.write(audio)
                 gap = pauses[SENTENCE_GAP] if k < len(parts) - 1 else seg["pause"]
-                out.write(np.zeros(int(gap * sr), dtype=np.float32))
+                silence = np.zeros(int(gap * sr), dtype=np.float32)
+                out.write(silence)
+                times.append([round(frames / sr, 3), round((frames + len(audio)) / sr, 3)])
+                frames += len(audio) + len(silence)
     os.replace(tmp, out_wav)
-    return index, sf.info(str(out_wav)).duration, new, cached
+    return index, sf.info(str(out_wav)).duration, new, cached, times
 
 
 def voice(script, book, out_dir, engine_name, engine_kw, workers=1, threads=None, log=print):
@@ -72,25 +77,28 @@ def voice(script, book, out_dir, engine_name, engine_kw, workers=1, threads=None
         data = {"title": ch.title, "segments": [{"text": s.text, "pause": s.pause} for s in ch.segments]}
         jobs.append((i, data, chapters_dir / f"{i:02d}.wav", str(cache_dir), engine_name, kw, book_lexicon,
                      book.settings["pauses"]))
-    results = {}
+    results, seg_times = {}, {}
     t0 = time.time()
     if workers <= 1:
         for job in jobs:
-            i, secs, new, cached = _voice_chapter(job)
+            i, secs, new, cached, times = _voice_chapter(job)
             results[i] = secs
+            seg_times[i] = times
             log(f"  {i:02d}/{len(jobs)} {script.chapters[i - 1].title[:50]:50} {secs / 60:5.1f} min "
                 f"({new} new, {cached} cached sentences)")
     else:
         with ProcessPoolExecutor(max_workers=workers) as pool:
             futures = [pool.submit(_voice_chapter, job) for job in jobs]
             for f in as_completed(futures):
-                i, secs, new, cached = f.result()
+                i, secs, new, cached, times = f.result()
                 results[i] = secs
+                seg_times[i] = times
                 log(f"  {i:02d}/{len(jobs)} {script.chapters[i - 1].title[:50]:50} {secs / 60:5.1f} min "
                     f"({new} new, {cached} cached sentences)")
     total = sum(results.values())
     log(f"voiced {len(jobs)} chapters, {total / 3600:.2f} h of audio in {(time.time() - t0) / 60:.1f} min")
-    manifest = [{"index": i, "title": ch.title, "wav": f"chapters/{i:02d}.wav", "seconds": results[i]}
+    manifest = [{"index": i, "title": ch.title, "wav": f"chapters/{i:02d}.wav", "seconds": results[i],
+                 "sentences": seg_times[i]}
                 for i, ch in enumerate(script.chapters, 1)]
     (out_dir / "chapters.json").write_text(json.dumps(manifest, indent=1, ensure_ascii=False), encoding="utf-8")
     return manifest
