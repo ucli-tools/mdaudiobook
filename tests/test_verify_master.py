@@ -26,6 +26,8 @@ def test_a_dropped_sentence_is_found():
 def test_letters_spoken_one_by_one_match_either_spelling():
     assert compare("It is written MDCLXV.", "It is written M D C L X V.")["wer"] == 0
     assert compare("As X X I I I there.", "As XXIII there.")["wer"] == 0
+    # A capital word from the transcriber is one word, not eight letters
+    assert compare("the Liber Abaci of Fibonacci", "the LIBERABI of Fibonacci")["inserted"] == []
 
 
 def test_single_misheard_words_are_not_drops():

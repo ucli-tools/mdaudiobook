@@ -31,7 +31,12 @@ def _number(m):
 
 
 def _letters(m):
-    return " ".join(m.group(0))
+    """Roman numerals and short initialisms are spoken letter by letter; a
+    longer capital word is a word (the transcriber sometimes writes one)."""
+    run = m.group(0)
+    if set(run) <= set("IVXLCDM") or len(run) <= 4:
+        return " ".join(run)
+    return run
 
 
 def normalize(text):
