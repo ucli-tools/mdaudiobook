@@ -166,6 +166,11 @@ def cmd_voices(args):
 
 def main(argv=None):
     import warnings
+    # Progress lines reach a log file as they happen, not when the build ends
+    try:
+        sys.stdout.reconfigure(line_buffering=True)
+    except (AttributeError, ValueError):
+        pass
     # Library notices from the voice model's dependencies, not the user's concern
     warnings.filterwarnings("ignore", category=FutureWarning)
     warnings.filterwarnings("ignore", category=UserWarning, module="torch")
