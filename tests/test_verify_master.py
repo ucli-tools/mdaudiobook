@@ -23,6 +23,11 @@ def test_a_dropped_sentence_is_found():
     assert len(r["dropped"]) == 1 and "kettle boiled over twice" in r["dropped"][0]
 
 
+def test_letters_spoken_one_by_one_match_either_spelling():
+    assert compare("It is written MDCLXV.", "It is written M D C L X V.")["wer"] == 0
+    assert compare("As X X I I I there.", "As XXIII there.")["wer"] == 0
+
+
 def test_single_misheard_words_are_not_drops():
     r = compare("An example for mdaudiobook, written by Jane Doe.", "An example for M. Daudio book, written by Jane Doe.")
     assert r["dropped"] == [] and r["inserted"] == []
@@ -31,7 +36,7 @@ def test_single_misheard_words_are_not_drops():
 @pytest.mark.skipif(not shutil.which("ffmpeg"), reason="needs ffmpeg")
 def test_mastering_meets_store_specs(tmp_path):
     sr = 24000
-    t = np.arange(int(sr * 6)) / sr
+    t = np.arange(int(sr * 6)) / sr          # a short file: head and tail silence weigh most
     speechlike = 0.3 * np.sin(2 * np.pi * 180 * t) * (0.5 + 0.5 * np.sin(2 * np.pi * 3 * t)) ** 2
     speechlike[int(sr * 2):int(sr * 2.5)] = 0
     (tmp_path / "chapters").mkdir()

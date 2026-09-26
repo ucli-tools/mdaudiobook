@@ -65,15 +65,23 @@ def square_cover(src, dst, size=2400):
 
 
 def _level(wav, out_wav):
-    """Level a chapter to TARGET_RMS under a peak limit, pad head and tail, 44.1 kHz mono."""
+    """Level a chapter to TARGET_RMS under a peak limit, pad head and tail, 44.1 kHz mono.
+
+    The limiter and the silent head and tail lower the level of the result,
+    most in a short file, so it is measured and the gain corrected once."""
     rms = measure(wav)["rms"]
     gain = TARGET_RMS - (rms if rms not in (None, float("-inf")) else TARGET_RMS)
-    # The limiter runs at the final rate and leaves room for the MP3
-    # encoder, which overshoots sample peaks by up to about 1.5 dB
-    _ffmpeg("-i", str(wav), "-af",
-            f"volume={gain:.2f}dB,aresample=44100,alimiter=limit={LIMIT:.3f}:level=false:attack=5:release=50,"
-            f"adelay={int(HEAD * 1000)}:all=1,apad=pad_dur={TAIL}",
-            "-ac", "1", "-c:a", "pcm_s16le", str(out_wav))
+    for _ in range(2):
+        # The limiter runs at the final rate and leaves room for the MP3
+        # encoder, which overshoots sample peaks by up to about 1.5 dB
+        _ffmpeg("-i", str(wav), "-af",
+                f"volume={gain:.2f}dB,aresample=44100,alimiter=limit={LIMIT:.3f}:level=false:attack=5:release=50,"
+                f"adelay={int(HEAD * 1000)}:all=1,apad=pad_dur={TAIL}",
+                "-ac", "1", "-c:a", "pcm_s16le", str(out_wav))
+        got = measure(out_wav)["rms"]
+        if got is None or abs(got - TARGET_RMS) < 0.5:
+            break
+        gain += TARGET_RMS - got
 
 
 def _tags(book, title, track=None, total=None):

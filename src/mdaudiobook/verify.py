@@ -30,10 +30,17 @@ def _number(m):
         return s
 
 
+def _letters(m):
+    return " ".join(m.group(0))
+
+
 def normalize(text):
-    text = text.lower().replace("’", "'").replace("‘", "'")
+    # Capital runs (Roman numerals, initials) are spoken letter by letter and
+    # transcribed either way ("MDCLXV" or "M D C L X V"): compare letters
+    text = re.sub(r"\b[A-Z]{2,}\b", _letters, text)
+    text = text.lower().replace("\u2019", "'").replace("\u2018", "'")
     text = re.sub(r"\d[\d,]*(?:\.\d+)?", _number, text)
-    text = re.sub(r"[-–—]", " ", text)
+    text = re.sub(r"[-\u2013\u2014]", " ", text)
     text = re.sub(r"[^a-z0-9' ]+", " ", text)
     text = re.sub(r"'s\b", "s", text)
     return re.sub(r"\s+", " ", text).strip()
