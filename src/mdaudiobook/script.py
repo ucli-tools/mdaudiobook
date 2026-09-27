@@ -312,7 +312,8 @@ class Walker:
         m = re.match(r"\s*<!--\s*audio-description\b(.*?)-->\s*$", html, re.S)
         if not m:
             return False
-        text = re.sub(r"\s+", " ", m.group(1)).strip()
+        # Markdown, so that a letter written $a$ is spoken by its name, as in the text
+        text = " ".join(self.blocks_text(pandoc_blocks(m.group(1), "markdown")))
         if self._last_float is None:
             self.note("orphan_description", text[:80])
         else:

@@ -134,6 +134,10 @@ turning around it ...
 -->
 ```
 
+The description is Markdown: a letter or symbol written as maths (`$a$`,
+`$\theta$`) is spoken as it is in the text, so a side labelled $a$ is "a" by
+name and not the article.
+
 `check` lists every figure without one; with `descriptions: required` in
 the book's `audiobook:` settings it fails until each has one.
 

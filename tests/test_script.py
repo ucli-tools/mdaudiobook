@@ -54,6 +54,8 @@ def test_descriptions_follow_their_figure(built):
     one = texts(built[1], "Chapter 1: The Unit Circle")
     i = one.index("Figure 1.1. The unit circle. Every point on it is one unit from the centre.")
     assert one[i + 1].startswith("Here in Figure 1.1 we see a circle drawn around the origin")
+    ch = next(c for c in built[1].chapters if c.title == "Chapter 1: The Unit Circle")
+    assert "the point where \ue010x\ue011 is one and \ue010y\ue011 is zero" in ch.segments[i + 1].text   # letters by name
     # the uncaptioned chart inside the print-only block has no number, as in the PDF
     assert [f[:2] + [f[3]] for f in built[1].floats] == [["Figure", "1.1", True], ["Table", "1.1", False],
                                                           ["Table", None, True], ["Table", None, False]]
