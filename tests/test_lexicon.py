@@ -30,6 +30,10 @@ def test_pronunciations_pick_book_entries_in_the_sentence():
 
 
 def test_ipa_to_kokoro():
-    assert ipa_to_kokoro("ˈheɪɡəl") == "ˈhAɡəl"
+    # stress marks move from the syllable's start to its vowel, as Kokoro expects
+    assert ipa_to_kokoro("ˈheɪɡəl") == "hˈAɡəl"
+    assert ipa_to_kokoro("ˈɡloʊni") == "ɡlˈOni"
     assert ipa_to_kokoro("ˈɔɪlɚ") == "ˈYləɹ"
+    assert ipa_to_kokoro("fuˈɹjeɪ") == "fuɹjˈA"
+    assert ipa_to_kokoro("ˌɑɹiθˈmɔɪ") == "ˌɑɹiθmˈY"
     assert ipa_to_kokoro("dʒoʊ") == "ʤO"

@@ -24,11 +24,30 @@ _IPA = [("eɪ", "A"), ("aɪ", "I"), ("oʊ", "O"), ("əʊ", "Q"), ("aʊ", "W"), (
         ("ː", ""), (".", ""), ("‿", "")]
 
 
+# Vowels of Kokoro's phoneme set (after the diphthongs became single letters)
+_VOWELS = set("aeiouæɑɐɒɔəɛɜɪʊʌɨʉɤøœɵɯAIOQWYᵊᵻ")
+
+
 def ipa_to_kokoro(ipa):
-    out = ipa.replace("'", "ˈ").replace(",", "ˌ")
+    """IPA -> Kokoro phonemes.
+
+    IPA puts a stress mark before the stressed syllable ("ˈheɪɡəl"); Kokoro
+    wants it directly before the stressed vowel ("hˈAɡəl"). Left at the start
+    of a word, before a consonant, the mark makes the voice sound a vowel
+    there: "Gloria" came out as "a Gloria"."""
+    ph = ipa.replace("'", "ˈ").replace(",", "ˌ")
     for a, b in _IPA:
-        out = out.replace(a, b)
-    return out
+        ph = ph.replace(a, b)
+    out, pending = [], ""
+    for ch in ph:
+        if ch in "ˈˌ":
+            pending = ch
+            continue
+        if pending and ch in _VOWELS:
+            out.append(pending)
+            pending = ""
+        out.append(ch)
+    return "".join(out)
 
 
 class KokoroEngine(Engine):
@@ -48,7 +67,8 @@ class KokoroEngine(Engine):
 
     @property
     def identity(self):
-        return f"kokoro-82m:{self.voice}:{self.speed}"
+        # p2: stress marks placed before vowels (sentences voiced before are redone)
+        return f"kokoro-82m-p2:{self.voice}:{self.speed}"
 
     def _pipeline(self):
         if self._pipe is None:
