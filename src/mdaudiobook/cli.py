@@ -153,7 +153,8 @@ def cmd_names(args):
                     str(out / "names.mp3")], check=True)
     (out / "names.wav").unlink()
     (out / "names.txt").write_text("\n".join(listing) + "\n", encoding="utf-8")
-    print(f"{len(names)} names ({len(unknown)} guessed, {len(book_lexicon)} from the lexicon): "
+    print(f"{len(names)} names ({len(unknown)} unknown to the voice, {len(book_lexicon)} from the lexicon, "
+          f"{len(guessed)} of them marked as guesses): "
           f"{out / 'names.mp3'} with {out / 'names.txt'}")
     return 0
 
