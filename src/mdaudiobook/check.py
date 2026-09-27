@@ -61,8 +61,9 @@ def run(script, book, engine=None):
              show=where)
     rep.item("equations the maths engine cannot speak", [f for f in inv if f.kind == "unspoken_math"],
              show=lambda f: f.detail)
+    markup = re.compile(r"\\[a-zA-Z]+|(?<!\w)@[a-zA-Z]+|[{}$^_&#|<>]")     # @name: a LaTeX internal
     leaks = [(ch.title, m.group(0), s.text[max(0, m.start() - 40):m.end() + 30])
-             for ch in script.chapters for s in ch.segments for m in re.finditer(r"\\[a-zA-Z]+|[{}$^_&#|<>]", s.text)]
+             for ch in script.chapters for s in ch.segments for m in markup.finditer(s.text)]
     rep.item("markup that would reach the voice", leaks, show=lambda x: f"{x[0]}: {x[2]!r}")
 
     full = "\n".join(s.text for s in segments)

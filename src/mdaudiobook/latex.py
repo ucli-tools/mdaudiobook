@@ -9,7 +9,8 @@ import re
 
 # TeX primitives and commands that only steer the page: nothing to read
 LAYOUT_TEX = re.compile(
-    r"(\s|\\(dimen\d*|ifdim|fi|else|penalty-?\d*|break|newline|begingroup|endgroup|baselineskip|pagegoal|"
+    r"(\s|\\csname\s*[@A-Za-z]+\s*\\endcsname"
+    r"|\\(dimen\d*|ifdim|fi|else|penalty-?\d*|break|newline|begingroup|endgroup|baselineskip|pagegoal|"
     r"pagetotal|advance|relax|hfill|vfil|vfill|linebreak|allowbreak|newpage|clearpage|cleardoublepage|pagebreak|"
     r"noindent|FloatBarrier|medskip|bigskip|smallskip|par|centering|nopagebreak|postdisplaypenalty|vspace\*?|"
     r"hspace\*?|enlargethispage\*?|needspace|thispagestyle|mbox|pagestyle|raggedbottom|flushbottom)"

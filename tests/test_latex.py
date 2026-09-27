@@ -4,7 +4,8 @@ from mdaudiobook import latex
 def test_layout_fragments_are_recognised():
     for tex in [r"\newpage", r"\nopagebreak[4]", r"\ifdim\dimen0>\dimen2 \ifdim\dimen2>0pt \vfil\fi",
                 r"\noindent\begin{minipage}{\textwidth}", r"\end{minipage}", r"\vspace{2em}",
-                r"\par\medskip\noindent\begin{minipage}{\textwidth}"]:
+                r"\par\medskip\noindent\begin{minipage}{\textwidth}",
+                r"\begingroup\postdisplaypenalty=10000 \csname @beginparpenalty\endcsname=10000"]:
         assert latex.is_layout(tex), tex
 
 
