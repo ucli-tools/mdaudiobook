@@ -40,7 +40,9 @@ class KokoroEngine(Engine):
         if voice not in VOICES and not os.path.exists(voice):
             raise EngineError(f"unknown Kokoro voice {voice!r}; try one of: {', '.join(VOICES)}")
         self.device = device
-        self.threads = threads
+        # PyTorch takes every core by default, which on a shared machine makes
+        # the voice slower, not faster: eight threads unless told otherwise
+        self.threads = threads or min(8, os.cpu_count() or 8)
         self._pipe = None
         self._g2p = None
 
