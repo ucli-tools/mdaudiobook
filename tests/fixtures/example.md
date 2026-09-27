@@ -36,6 +36,11 @@ $$\sum_{n=1}^{\infty} \frac{1}{n^2} = \frac{\pi^2}{6}$$
 \end{figure}
 ```
 
+<!-- audio-description
+Here in Figure 1.1 we see a circle drawn around the origin, with a dot on its
+right-hand edge marked one.
+-->
+
 ```{=latex}
 \newpage
 ```

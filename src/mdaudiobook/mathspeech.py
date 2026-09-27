@@ -68,6 +68,9 @@ def _polish(said):
     # "x to the n-th power" reads better as "x to the power n"
     said = re.sub(r"\bto the (\w+)-th power\b", r"to the power \1", said)
     said = re.sub(r"\b([A-Za-z])-th\b", r"\1th", said)
+    # A single letter in mathematics is a letter, not a word: "e" is not read
+    # like the article "a", "a" not like "uh", "i" not like "I"
+    said = re.sub(r"(?<![\w'\u2019])([A-Za-z])(?![\w'\u2019])", "\ue010\\1\ue011", said)
     return re.sub(r"\s+", " ", said).strip()
 
 

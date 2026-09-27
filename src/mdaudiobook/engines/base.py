@@ -1,5 +1,18 @@
 """The engine interface."""
 
+L_OPEN, L_CLOSE = "\ue010", "\ue011"   # a letter in mathematics, spoken by its name
+
+# Letter names in IPA, for engines that take pronunciations
+LETTER_IPA = {"a": "ˈeɪ", "b": "ˈbi", "c": "ˈsi", "d": "ˈdi", "e": "ˈi", "f": "ˈɛf", "g": "ˈdʒi", "h": "ˈeɪtʃ",
+              "i": "ˈaɪ", "j": "ˈdʒeɪ", "k": "ˈkeɪ", "l": "ˈɛl", "m": "ˈɛm", "n": "ˈɛn", "o": "ˈoʊ", "p": "ˈpi",
+              "q": "ˈkju", "r": "ˈɑɹ", "s": "ˈɛs", "t": "ˈti", "u": "ˈju", "v": "ˈvi", "w": "ˈdʌbəlju",
+              "x": "ˈɛks", "y": "ˈwaɪ", "z": "ˈzi"}
+
+
+def plain_letters(text):
+    """The sentence with letter markers removed (an engine without phonemes)."""
+    return text.replace(L_OPEN, "").replace(L_CLOSE, "")
+
 
 class EngineError(RuntimeError):
     pass
@@ -23,8 +36,9 @@ class Engine:
         """One sentence -> mono float32 numpy array at self.sample_rate.
 
         `pronunciations` is {word: IPA} for the words in this sentence that
-        need a given pronunciation. Must raise EngineError rather than
-        return partial or empty audio.
+        need a given pronunciation. A letter of mathematics arrives between
+        L_OPEN and L_CLOSE and is spoken by its name (LETTER_IPA). Must raise
+        EngineError rather than return partial or empty audio.
         """
         raise NotImplementedError
 

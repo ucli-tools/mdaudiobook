@@ -14,6 +14,14 @@ Markup a book can use (PDF and EPUB builds print the content as usual):
   [text]{speak="..."}             read the attribute instead of the text
   [text]{speak=""}                skip the text (for example glyphs already
                                   described in words next to them)
+  {number} in a speak attribute   the number of the figure or table inside
+  <!-- audio-description          after a figure or table: what the picture
+  Here in Figure 9.2 we see ...   shows, read after its caption (an HTML
+  -->                             comment: invisible in print and on screen)
+
+Figures and tables are announced with their numbers as the PDF prints them:
+per chapter, prefixed by the chapter's own label ("Chapter 9" gives 9.1,
+9.2 ...; "Appendix B" gives B.1 ...).
 """
 import json
 import re
@@ -24,6 +32,12 @@ from . import latex, mathspeech
 from .text import normalize
 
 M_OPEN, M_CLOSE = "\ue000", "\ue001"   # maths placeholders, never in a book
+L_OPEN, L_CLOSE = "\ue010", "\ue011"   # a letter in mathematics, spoken by its name
+
+
+def plain(text):
+    """Text without the letter markers, for reading and review."""
+    return text.replace(L_OPEN, "").replace(L_CLOSE, "")
 
 
 @dataclass
@@ -56,17 +70,18 @@ class Script:
     chapters: list
     inventory: list
     maths: int
+    floats: list = field(default_factory=list)     # [kind, number, caption, described]
 
     def to_json(self):
         return {"chapters": [asdict(c) for c in self.chapters], "inventory": [asdict(f) for f in self.inventory],
-                "maths": self.maths}
+                "maths": self.maths, "floats": self.floats}
 
     def text(self):
         """The script as plain text, one paragraph per segment, for reading and review."""
         lines = []
         for i, ch in enumerate(self.chapters, 1):
             lines.append(f"=== {i:02d}. {ch.title} ===\n")
-            lines.extend(s.text + "\n" for s in ch.segments)
+            lines.extend(plain(s.text) + "\n" for s in ch.segments)
         return "\n".join(lines)
 
 
@@ -92,6 +107,10 @@ class Walker:
         self.heading = ""
         self._raw_open = set()
         self._chapter_title = "Opening"
+        self.label = None                   # the chapter's label for numbering: "9", "B"
+        self.counts = {"Figure": 0, "Table": 0}
+        self.floats = []                    # [kind, number, caption, described]
+        self._last_float = None             # index in self.floats, while its description may follow
 
     # ---- bookkeeping -------------------------------------------------------
     def where(self):
@@ -167,14 +186,16 @@ class Walker:
             self._raw_open.discard(tex)
 
     def blocks_text(self, bs):
-        """The words of some blocks, without adding them to the script."""
-        saved = self.chapters, self.heading
+        """The words of some blocks, without adding them to the script or
+        counting any figure or table in them a second time."""
+        saved = (self.chapters, self.heading, dict(self.counts), len(self.floats), self._last_float)
         self.chapters = [Chapter("", 0)]
         try:
             self.blocks(bs, nested=True)
             return [s.text for s in self.chapters[0].segments]
         finally:
-            self.chapters, self.heading = saved
+            self.chapters, self.heading, self.counts, n, self._last_float = saved
+            del self.floats[n:]
 
     # ---- blocks ------------------------------------------------------------
     def blocks(self, bs, nested=False):
@@ -193,6 +214,7 @@ class Walker:
             pause = self.p["chapter_heading"] if level <= self.s["chapter_level"] else self.p["heading"]
             self.add(title + ("" if title[-1:] in ".!?:" else "."), pause, "heading")
         elif t in ("Para", "Plain"):
+            self._last_float = None
             text = self.inlines(c, notes)
             alone = re.fullmatch(f"{M_OPEN}\\d+{M_CLOSE}", text.strip())
             self.add(text, self.p["equation"] if alone else self.p["paragraph"], "equation" if alone else "text")
@@ -217,19 +239,27 @@ class Walker:
         elif t == "Div":
             _, classes, kv = _attrs(c[0])
             if "speak" in kv:
-                self.note("spoken_form", kv["speak"][:80])
-                self.add(kv["speak"], self.p["paragraph"])
+                nums = self.count_floats(c[1])
+                said = kv["speak"].replace("{number}", nums[0] if nums and nums[0] else "")
+                self.note("spoken_form", said[:80])
+                self._last_float = None
+                self.add(said, self.p["paragraph"])
             elif "print-only" in classes:
+                self.count_floats(c[1])
+                self._last_float = None
                 self.note("print_only_unspoken", self.first_words(c[1]))
             else:
                 self.blocks(c[1], nested)
         elif t == "RawBlock" and c[0] in ("latex", "tex"):
             self.raw_block(c[1], nested)
+        elif t == "RawBlock" and c[0] == "html":
+            self.description(c[1])
         elif t == "Figure":
             caption = " ".join(self.blocks_text(c[1][1]))
             self.note("figure", caption or "(no caption)")
+            said = self.float_seen("Figure", caption)
             if caption:
-                self.add("Figure. " + caption, self.p["paragraph"], "figure")
+                self.add(said + " " + caption, self.p["paragraph"], "figure")
         elif t == "Table":
             self.table(c)
         elif t == "CodeBlock":
@@ -240,6 +270,55 @@ class Walker:
                 segs[-1].pause = max(segs[-1].pause, self.p["heading"])
         for n in notes:
             self.add("Footnote. " + n, self.p["paragraph"], "note")
+
+    def number(self, kind, caption):
+        """Next number of a figure or table, as the PDF prints it: LaTeX
+        numbers a float at its caption, so one without a caption has none."""
+        if not caption.strip():
+            return None
+        self.counts[kind] += 1
+        return f"{self.label}.{self.counts[kind]}" if self.label else None
+
+    def float_seen(self, kind, caption):
+        num = self.number(kind, caption)
+        self.floats.append([kind, num, caption, False])
+        self._last_float = len(self.floats) - 1
+        if caption.strip() and not num:
+            self.note("unnumbered_float", f"{kind} in a chapter without a label: {caption[:60]}")
+        return f"{kind} {num}." if num else f"{kind}."
+
+    def count_floats(self, bs):
+        """Figures and tables inside content that is not read (print-only):
+        they are numbered in the PDF, so they are counted here too."""
+        found = []
+        for b in bs:
+            t, c = b["t"], b.get("c")
+            if t == "RawBlock" and c[0] in ("latex", "tex") and not latex.is_layout(c[1]):
+                try:
+                    found += self.count_floats(pandoc_blocks(latex.prepare(c[1]), "latex"))
+                except ValueError:
+                    pass
+            elif t in ("Figure", "Table"):
+                caption = " ".join(self.blocks_text((c[1] if t == "Figure" else c[1])[1]))
+                kind = "Figure" if t == "Figure" else "Table"
+                num = self.number(kind, caption)
+                self.floats.append([kind, num, caption, True])
+                found.append(num)
+            elif t == "Div":
+                found += self.count_floats(c[1])
+        return found
+
+    def description(self, html):
+        m = re.match(r"\s*<!--\s*audio-description\b(.*?)-->\s*$", html, re.S)
+        if not m:
+            return False
+        text = re.sub(r"\s+", " ", m.group(1)).strip()
+        if self._last_float is None:
+            self.note("orphan_description", text[:80])
+        else:
+            self.floats[self._last_float][3] = True
+        self.add(text, self.p["paragraph"], "description")
+        return True
 
     def first_words(self, bs):
         text = " ".join(self.blocks_text(bs))
@@ -272,8 +351,9 @@ class Walker:
         self.note("table", caption or "(no caption)")
         if not any(header):
             self.note("table_without_header", caption or "(no caption)")
+        said = self.float_seen("Table", caption)
         if caption:
-            self.add("Table. " + caption, self.p["paragraph"], "table")
+            self.add(said + " " + caption, self.p["paragraph"], "table")
         for body in c[4]:
             for row in body[3]:
                 cells = [" ".join(self.blocks_text(cell[4])) for cell in row[1]]
@@ -298,6 +378,10 @@ class Walker:
         self.chapters.append(Chapter(title, level, list(carry)))
         self.heading = title
         self._chapter_title = title
+        m = re.match(r"(?:Chapter|Appendix)\s+([0-9]+|[A-Z]{1,3})\b", title)
+        self.label = m.group(1) if m else None
+        self.counts = {"Figure": 0, "Table": 0}
+        self._last_float = None
 
 
 def _apply_equation_readings(chapters):
@@ -364,6 +448,9 @@ def build(book, style="clearspeak"):
         if not said:
             w.inventory.append(Finding("unspoken_math", tex[:200], ""))
     spoken = [said or "an equation" for said in spoken]
+    for f in w.floats:
+        f.append(f[2])                                   # the caption as written, with maths marked
+        f[2] = re.sub(f"{M_OPEN}(\\d+){M_CLOSE}", lambda m: plain(spoken[int(m.group(1))]), f[2])
 
     chapters = [c for c in w.chapters if c.segments]
     if s["equation_readings"] == "after":
@@ -375,7 +462,7 @@ def build(book, style="clearspeak"):
     if s["credits"]:
         opening, closing = credits(book)
         chapters = [opening] + chapters + [closing]
-    return Script(chapters=chapters, inventory=w.inventory, maths=len(w.maths))
+    return Script(chapters=chapters, inventory=w.inventory, maths=len(w.maths), floats=w.floats)
 
 
 def select(script, spec):
@@ -392,4 +479,4 @@ def select(script, spec):
         else:
             chosen.update(i for i, c in enumerate(script.chapters, 1) if part.lower() in c.title.lower())
     keep = [c for i, c in enumerate(script.chapters, 1) if i in chosen and i <= n]
-    return Script(chapters=keep, inventory=script.inventory, maths=script.maths)
+    return Script(chapters=keep, inventory=script.inventory, maths=script.maths, floats=script.floats)

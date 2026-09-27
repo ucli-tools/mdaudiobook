@@ -11,6 +11,7 @@ fallback reads.
 """
 import collections
 import re
+import subprocess
 
 from . import lexicon as lex
 
@@ -86,6 +87,15 @@ def run(script, book, engine=None):
                  limit=40, show=lambda x: f"{x[0]} ({x[1]})")
         rep.item("ordinary words the voice reads through its fallback", common.most_common(), fail=False,
                  limit=12, show=lambda x: f"{x[0]} ({x[1]})")
+    floats = script.floats
+    # A table is read in full, row by row; a figure's picture only through words written for it
+    undescribed = [f"{f[0]} {f[1] or '(unnumbered)'}: {f[2][:70]}" for f in floats
+                   if f[0] == "Figure" and not f[3] and f[2].strip()]
+    rep.item("figures without an audio description (what the picture shows)", undescribed,
+             fail=book.settings.get("descriptions") == "required", limit=12)
+    pdf = book.pdf_path()
+    if pdf:
+        rep.item(f"figure and table numbers that differ from {pdf.name}", pdf_mismatches(floats, pdf), limit=12)
     guessed = lex.guesses(book.lexicon_path)
     rep.item("pronunciations still marked as guesses (hear them with `mdaudiobook names`)", sorted(guessed),
              fail=False, limit=20)
@@ -93,3 +103,33 @@ def run(script, book, engine=None):
              [f for f in inv if f.kind == "print_only_unspoken"], fail=False, show=where)
     rep.item("code blocks (not read)", [f for f in inv if f.kind == "code_block"], fail=False, show=where)
     return rep
+
+
+def _words(text):
+    return re.findall(r"[a-z]+", text.lower())
+
+
+def pdf_mismatches(floats, pdf):
+    """Numbers and caption openings of the script's figures and tables against
+    the captions printed in the PDF ("Figure 9.2: The ..."). Only the words
+    before any mathematics are compared: spoken and printed maths differ."""
+    text = subprocess.run(["pdftotext", "-layout", str(pdf), "-"], capture_output=True, text=True).stdout
+    printed = {}
+    for kind, num, cap in re.findall(r"^\s*(Figure|Table) ([0-9A-Z]+\.\d+):\s+(.*)$", text, re.M):
+        printed.setdefault((kind, num), cap)
+    problems, seen = [], set()
+    for f in floats:
+        kind, num, cap, written = f[0], f[1], f[2], f[4] if len(f) > 4 else f[2]
+        if not num:
+            continue
+        seen.add((kind, num))
+        if (kind, num) not in printed:
+            problems.append(f"{kind} {num} ({cap[:50]!r}) is not captioned so in the PDF")
+            continue
+        head = _words(written.split("\ue000")[0])[:3]
+        if head and _words(printed[(kind, num)])[:len(head)] != head:
+            problems.append(f"{kind} {num}: script {cap[:45]!r}, PDF {printed[(kind, num)][:45]!r}")
+    for key in printed:
+        if key not in seen:
+            problems.append(f"{key[0]} {key[1]} in the PDF is not in the script")
+    return problems

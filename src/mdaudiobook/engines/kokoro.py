@@ -11,7 +11,7 @@ import re
 
 import numpy as np
 
-from .base import Engine, EngineError
+from .base import L_CLOSE, L_OPEN, LETTER_IPA, Engine, EngineError
 
 VOICES = ["am_michael", "am_fenrir", "am_puck", "am_echo", "am_eric", "am_liam", "am_onyx", "am_adam",
           "af_heart", "af_bella", "af_nicole", "af_aoede", "af_kore", "af_sarah", "af_nova", "af_sky",
@@ -69,7 +69,8 @@ class KokoroEngine(Engine):
 
     def synthesize(self, sentence, pronunciations):
         pipe = self._pipeline()
-        text = sentence
+        text = re.sub(f"{L_OPEN}([A-Za-z]){L_CLOSE}",
+                      lambda m: f"[{m.group(1)}](/{self.phonemes(LETTER_IPA[m.group(1).lower()])}/)", sentence)
         # Longest words first, so "Leibnizian" is not cut by "Leibniz"
         for word in sorted(pronunciations, key=len, reverse=True):
             ph = self.phonemes(pronunciations[word])

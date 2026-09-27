@@ -44,6 +44,7 @@ def _letters(m):
 
 
 def normalize(text):
+    text = text.replace("\ue010", "").replace("\ue011", "")
     # Capital runs (Roman numerals, initials) are spoken letter by letter and
     # transcribed either way ("MDCLXV" or "M D C L X V"): compare letters
     text = re.sub(r"\b[A-Z]{2,}\b", _letters, text)

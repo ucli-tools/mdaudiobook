@@ -33,10 +33,10 @@ can be checked against the one before it.
 | In the book | In the audiobook |
 |---|---|
 | Headings | Read, with a longer pause; chapter headings start a new file, part titles are announced at the start of the next chapter |
-| Mathematics | Read by the [Speech Rule Engine](https://github.com/Speech-Rule-Engine/speech-rule-engine) (the engine screen readers use) in ClearSpeak style: "the fraction with numerator 1 and denominator n squared" |
+| Mathematics | Read by the [Speech Rule Engine](https://github.com/Speech-Rule-Engine/speech-rule-engine) (the engine screen readers use) in ClearSpeak style: "the fraction with numerator 1 and denominator n squared"; a letter in mathematics is spoken by its name ("e" as "ee", never like the article "a") |
 | A display equation the book itself reads aloud in the next line | The book's own reading (setting `equation_readings: after`) |
-| Figures | "Figure." and the caption; the drawing itself is skipped |
-| Tables | "Table." and the caption, then each row with its column names: "180 degrees. Fraction of a turn: a half." |
+| Figures | "Figure 9.2." and the caption, then the book's audio description of the picture, if it gives one (see below) |
+| Tables | "Table 3.1." and the caption, then each row with its column names: "180 degrees. Fraction of a turn: a half." |
 | Footnotes | "Footnote." and the note, after its paragraph |
 | Abbreviations, units, symbols, URLs | Said the way a narrator says them: "for example", "40 hertz", "50 percent", "library dot example dot org" |
 | Words in Greek, Cyrillic, Hebrew, ... | Pronounced in their own language (through espeak-ng) |
@@ -95,6 +95,8 @@ audiobook:
   equation_readings: after        # or none
   chapter_level: 2                # headings at this level or above start a new file
   cover: img/cover_square.jpg     # square, at least 2400x2400; else cover_image cropped to a square
+  descriptions: required          # every figure needs an audio description (default: optional)
+  pdf: book.pdf                   # the built PDF to check numbers against (default: <book>.pdf)
   narrator: "a synthetic voice"   # credited in the opening and closing credits
   credits: true
   max_file_minutes: 110           # longer chapters are split at a heading
@@ -117,7 +119,28 @@ Three strokes [(𓏺𓏺𓏺)]{speak=""} mean three.
 
 `speak="..."` replaces the content in the audiobook; `speak=""` silences it
 (for signs already described in words beside them); a `.print-only` block
-without `speak` is skipped and reported by `check`.
+without `speak` is skipped and reported by `check`. In a `speak` attribute,
+`{number}` stands for the number of the figure or table inside the block.
+
+A listener cannot see a figure, so a book can say what it shows. An HTML
+comment right after the figure is read after its caption, and appears nowhere
+else (not in the PDF, the EPUB or rendered Markdown), while it stays in the
+Markdown for the author to review:
+
+```markdown
+<!-- audio-description
+Here in Figure 9.2 we see a circle drawn around the origin, with a point
+turning around it ...
+-->
+```
+
+`check` lists every figure without one; with `descriptions: required` in
+the book's `audiobook:` settings it fails until each has one.
+
+Figures and tables are numbered as the PDF numbers them: per chapter, with the
+chapter's label ("Chapter 9" gives 9.1, 9.2 ...; "Appendix B" gives B.1 ...),
+and only when captioned. When the book's PDF is built (`<book>.pdf` beside it,
+or `audiobook.pdf`), `check` compares every number and caption with it.
 
 ## Pronunciations
 

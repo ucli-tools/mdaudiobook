@@ -37,6 +37,12 @@ DEFAULTS = {
     # Pauses in seconds
     "pauses": {"sentence": 0.35, "paragraph": 0.75, "heading": 1.2, "chapter_heading": 1.8,
                "equation": 0.6, "list_item": 0.45},
+    # "required": every figure and table must have an audio description (an
+    # <!-- audio-description ... --> comment after it); "optional": listed only
+    "descriptions": "optional",
+    # The built PDF, to check that figure and table numbers match it
+    # (default: <book>.pdf beside the book, when it exists)
+    "pdf": None,
     # Markers stripped before reading (docx2md writes Word index entries this way)
     "strip_patterns": [r"\[index:[^\]]*\]"],
 }
@@ -103,6 +109,10 @@ class Book:
     @property
     def out_dir(self):
         return self.path.parent / f"{self.stem}_audiobook"
+
+    def pdf_path(self):
+        p = self.resolve(self.settings.get("pdf")) or self.path.with_suffix(".pdf")
+        return p if p.exists() else None
 
     def cover_path(self):
         return self.resolve(self.settings.get("cover")) or self.resolve(self.meta.get("cover_image"))
