@@ -80,6 +80,9 @@ def prepare(tex):
     gets a plain column specification, and a table captioned with
     \\captionof{table} inside a figure becomes a table with a caption.
     """
+    # Page-only wrappers can open in a different Markdown raw block. Drop
+    # both ends so a closing wrapper cannot hide the neighbouring prose.
+    tex = re.sub(r"\\(?:begin|end)\{samepage\}", "", tex)
     tex = re.sub(r"\\newcolumntype\{.\}(\[\d\])?\{(?:[^{}]|\{(?:[^{}]|\{[^{}]*\})*\})*\}", "", tex)
     tex = re.sub(r"\\renewcommand\{\\arraystretch\}\{[^}]*\}", "", tex)
     tex = re.sub(r"\\noalign\{(?:[^{}]|\{[^{}]*\})*\}", "", tex)

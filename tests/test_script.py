@@ -91,3 +91,21 @@ def test_select(built):
     s = built[1]
     assert [c.title for c in script.select(s, "2-3").chapters] == ["Chapter 1: The Unit Circle", "Chapter 2: Counting"]
     assert [c.title for c in script.select(s, "counting").chapters] == ["Chapter 2: Counting"]
+
+
+@pytest.mark.parametrize("split_wrapper", [True, False])
+def test_samepage_wrapper_preserves_caption(tmp_path, split_wrapper):
+    caption = (r"\begin{center}\parbox{\linewidth}{\centering\itshape "
+               r"Both keys are silver.}\end{center}")
+    opening = r"\begin{samepage}"
+    closing = r"\end{samepage}"
+    if split_wrapper:
+        blocks = f"```{{=latex}}\n{opening}\n```\n\nTwo small keys rest on a desk.\n\n"
+        blocks += f"```{{=latex}}\n{caption}\n{closing}\n```\n"
+    else:
+        blocks = f"```{{=latex}}\n{opening}\n{caption}\n{closing}\n```\n"
+    path = tmp_path / "example.md"
+    path.write_text("## Chapter 1: Small Objects\n\n" + blocks)
+    narration = script.build(Book.load(path))
+    assert narration.text().count("Both keys are silver.") == 1
+    assert not any(f.kind in ("unparsed_raw", "silent_raw") for f in narration.inventory)
