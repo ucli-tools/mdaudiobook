@@ -36,3 +36,16 @@ def test_long_sentences_are_cut_at_clause_breaks():
     parts = sentences(long, max_chars=120)
     assert len(parts) > 1 and all(len(p) <= 120 for p in parts)
     assert " ".join(parts) == long
+
+
+def test_numbers_the_voice_can_lose_are_words():
+    # Kokoro's text-to-phoneme step drops a bare 0 or a dotted number it takes for punctuation
+    assert normalize("Row 1: 0 a 0 Row 2: k sub 0 x, power 0.") == "Row 1: zero a zero Row 2: k sub zero x, power zero."
+    assert normalize("Figure 1.1.16 – Plotted (Figure 1.8.13).") == \
+        "Figure one point one point sixteen – Plotted (Figure one point eight point thirteen)."
+    assert normalize("0.9925, 1.0, 10, 100 and 1,000 stay; 0 km.") == "0.9925, 1.0, 10, 100 and 1,000 stay; zero kilometres."
+
+
+def test_stray_emphasis_markers_are_dropped():
+    assert normalize("*Identity**:* There is our *complex-angle spac**e,* p") == "Identity: There is our complex-angle space, p"
+    assert normalize("iter=mod(j*k, n1);") == "iter=mod(j*k, n1);"

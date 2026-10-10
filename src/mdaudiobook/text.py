@@ -7,6 +7,8 @@ drop the end of a longer input, so long sentences are cut at clause breaks.
 """
 import re
 
+from num2words import num2words
+
 ABBREVIATIONS = [
     (r"\be\.g\.,?", "for example,"),
     (r"\bi\.e\.,?", "that is,"),
@@ -73,6 +75,23 @@ def _url(m):
     return u.replace(".", " dot ").replace("/", " slash ").replace("-", " dash ").replace("_", " underscore ") + tail
 
 
+def _dotted(m):
+    return " point ".join(num2words(int(n)) for n in m.group(0).split("."))
+
+
+def numbers_in_words(text):
+    """The numbers the voice can lose, in words.
+
+    Kokoro's text-to-phoneme step (misaki) takes a token that spaCy tags as
+    punctuation for punctuation, even when it is a number: a bare 0 ("power 0
+    Row 2", "k sub 0 x", a sentence that starts "0 a 0") and a dotted number
+    ("Figure 1.1.16 –") then make no sound. Written as words they cannot be
+    taken for punctuation. Decimals (0.5, 1.0) and longer numbers are left
+    as they are."""
+    text = re.sub(r"(?<![\w.])\d+(?:\.\d+){2,}(?![\w]|\.\d)", _dotted, text)
+    return re.sub(r"(?<![\w.])0(?![\w]|\.\d)", "zero", text)
+
+
 def normalize(text):
     text = re.sub(r"https?://\S+|\b(?:www\.)?[a-z0-9-]+(?:\.[a-z0-9-]+)*\.(?:org|com|net|io|edu|gov|tf)(?:/\S*)?",
                   _url, text)
@@ -85,6 +104,11 @@ def normalize(text):
     text = re.sub(r"\bHz\b", "hertz", text)
     text = re.sub(r"\s=\s", " equals ", text)
     text = re.sub(r"(?<=\d)\s*\+\s*(?=\d)", " plus ", text)
+    text = numbers_in_words(text)
+    # Emphasis markers left unpaired by a conversion ("*Identity**:*",
+    # "spac**e,*") are read "asterisk": drop every * except one between two
+    # word characters (j*k in code)
+    text = re.sub(r"\*{2,}|(?<!\w)\*|\*(?!\w)", "", text)
     # Punctuation left before a full stop by a silenced span: "wedges: ."
     text = re.sub(r"[:;,]\s*([.!?])", r"\1", text)
     text = re.sub(STRESS_WORDS, lambda m: m.group(1).lower(), text)
