@@ -150,13 +150,14 @@ _BEGIN_END = re.compile(r"\\(begin|end)\{([^{}]*)\}")
 
 
 def _rows(body):
-    """A table's rows that are not empty, each a list of its cells: split at
-    the table's own row and cell marks, not at those of a table inside it."""
+    """A table's rows that are not empty, each a list of its cells as (start,
+    end) in the body: split at the table's own row and cell marks, not at
+    those of a table inside it."""
     rows, cells, depth, i, start = [], [], 0, 0, 0
     while i < len(body):
         ch = body[i]
         if depth == 0 and (ch == "&" or body.startswith("\\\\", i)):
-            cells.append(body[start:i])
+            cells.append((start, i))
             if ch == "&":
                 i += 1
             else:
@@ -180,8 +181,21 @@ def _rows(body):
         elif ch == "}":
             depth -= 1
         i += 1
-    rows.append(cells + [body[start:]])
-    return [r for r in rows if "".join(r).strip()]
+    rows.append(cells + [(start, len(body))])
+    return [r for r in rows if any(body[a:b].strip() for a, b in r)]
+
+
+def _continued_lines(body, rows):
+    """A line that starts with + carries on the line above it: the speech
+    engine, which reads each line on its own, would take the + for a sign
+    ("positive ..."), so it is said as the word."""
+    for row in reversed(rows[1:]):
+        a, b = next(((a, b) for a, b in row if body[a:b].strip()), row[0])
+        m = re.match(r"(\s|\\[,;:! ]|\\q?quad\b|~)*\+(?!=)", body[a:b])     # after any spacing
+        if m:
+            p = a + m.end() - 1
+            body = body[:p] + r"\text{plus }" + body[p + 1:]
+    return body
 
 
 def _one_line_tables(tex):
@@ -212,16 +226,45 @@ def _one_line_tables(tex):
         body = _one_line_tables(tex[k:end.start()])
         rows = _rows(body)
         before = "".join(out) + tex[i:m.start()]
-        # an array's columns are columns (a row vector), and a fenced array is
-        # a matrix; the & of the aligning environments only line rows up
-        if (env in _LINE_ENVS and len(rows) <= 1 and "\\hline" not in body
-                and not (env == "array" and (rows and len(rows[0]) > 1 or _FENCE.search(before)))):
-            line = " ".join(c.strip() for c in rows[0]) if rows else ""
+        # an array's columns are columns (a row vector, a grid), and a fenced
+        # array is a matrix; the & of the aligning environments only line
+        # rows up
+        lines = env in _LINE_ENVS and "\\hline" not in body and not (
+            env == "array" and (any(len(r) > 1 for r in rows) or _FENCE.search(before)))
+        if lines and len(rows) <= 1:
+            line = " ".join(body[a:b].strip() for a, b in rows[0]) if rows else ""
             out.append(tex[i:m.start()] + "{" + line.strip() + "}")
         else:
-            out.append(tex[i:k] + body + end.group(0))
+            out.append(tex[i:k] + (_continued_lines(body, rows) if lines else body) + end.group(0))
         i = end.end()
     return "".join(out) + tex[i:]
+
+
+# Sentence punctuation a book sets at the end of its mathematics, which the
+# speech engine would read out as a word ("equals rho comma"). What may
+# follow it: spaces, closing braces, \end{...}, a last row break, spacing.
+_AFTER_MARK = re.compile(r"(\s+|\}|\\end\{[^{}]*\}|\\\\(\[[^]]*\])?|(?<!\\)\\[,;:! ]|\\q?quad\b|~)$")
+
+
+def trailing_punctuation(tex):
+    """TeX -> (TeX without the , . or ; that ends it, that mark or "").
+
+    The mark is said as punctuation after the expression. A dot that closes
+    an ellipsis or is a delimiter (\\right.) is mathematics and stays."""
+    end = len(tex)
+    while m := _AFTER_MARK.search(tex, 0, end):
+        if m.start() == end:
+            break
+        end = m.start()
+    if not end or tex[end - 1] not in ",.;":
+        return tex, ""
+    before = tex[:end - 1]
+    if before.endswith((".", "\\")) or re.search(r"\\(right|left|[bB]igg?[lr]?|middle)\s*$", before):
+        return tex, ""
+    rest = re.sub(r"(\s|(?<!\\)\\[,;:! ]|\\q?quad\b|~)+$", "", before + tex[end:])   # space after it says nothing
+    if not re.search(r"[A-Za-z0-9\\]", rest):
+        return tex, ""
+    return rest, tex[end - 1]
 
 
 _FONT = re.compile(r"\\(textit|textbf|textrm|textsf|texttt|textup|textsl|emph)\{")

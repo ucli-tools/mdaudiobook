@@ -43,9 +43,12 @@ def test_equations_the_book_reads_itself(built):
 
 def test_equations_set_out_in_lines(built):
     one = texts(built[1], "Chapter 1: The Unit Circle")
-    assert "x squared plus y squared equals 1 comma" in one          # one line: only the equation
-    assert "x equals cosine t comma; y equals sine t period" in one   # two lines: a pause between them
+    assert "x squared plus y squared equals 1," in one          # one line: only the equation
+    assert "x equals cosine t, y equals sine t." in one         # two lines: a pause between them
     assert not any("lines" in t or "Line" in t for t in one)
+    # a line that starts with + carries on the line above
+    said = mathspeech.speak([(r"\begin{array}{r} a = b + c \\ + d + e, \\ = f. \end{array}", True)])[0]
+    assert script.plain(said) == "a equals b plus c; plus d plus e, equals f."
     # what the speech engine says of a table of lines that reaches it anyway
     def polish(said):
         return script.plain(mathspeech._polish(said))
@@ -54,6 +57,21 @@ def test_equations_set_out_in_lines(built):
     assert polish("the 2 by 2 matrix Row 1: Column 1, blank Column 2, 1") == \
         "the 2 by 2 matrix Row 1: Column 1, blank Column 2, 1"
     assert polish("2 cases Case 1: 1 if x is greater than 0") == "2 cases Case 1: 1 if x is greater than 0"
+
+
+def test_punctuation_in_mathematics_is_punctuation(built):
+    one = texts(built[1], "Chapter 1: The Unit Circle")
+    para = next(t for t in one if t.startswith("A circle of radius one"))
+    assert "every point open paren x, y close paren with" in para
+    said = mathspeech.speak([(r"f(x, y) = 1.", False), (r"a_1, a_2, \ldots, a_n", False), (r"1, 2, 3, ...", False),
+                             (r"x = 1;", True), (r"\left\{ x \right.", True), (r"T_{\text{period}} = 2\pi.", False),
+                             (r"0.5", False)])
+    assert [script.plain(s) for s in said] == [
+        "f of open paren x, y close paren equals 1.", "a sub 1, a sub 2, and so on, a sub n", "1, 2, 3, and so on",
+        "x equals 1;", "open brace x", "T sub period equals 2 pi.", "0.5"]
+    # a word the expression holds itself is not a punctuation mark
+    assert script.plain(mathspeech._polish("x comma T sub period", r"x, T_{\text{period}}")) == "x, T sub period"
+    assert script.plain(mathspeech._polish("x period T sub comma", r"x. T_{\text{comma}}")) == "x. T sub comma"
 
 
 def test_figures_tables_notes_and_normalising(built):

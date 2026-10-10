@@ -33,9 +33,9 @@ can be checked against the one before it.
 | In the book | In the audiobook |
 |---|---|
 | Headings | Read, with a longer pause; chapter headings start a new file, part titles are announced at the start of the next chapter |
-| Mathematics | Read by the [Speech Rule Engine](https://github.com/Speech-Rule-Engine/speech-rule-engine) (the engine screen readers use) in ClearSpeak style: "the fraction with numerator 1 and denominator n squared"; a letter in mathematics is spoken by its name ("e" as "ee", never like the article "a") |
+| Mathematics | Read by the [Speech Rule Engine](https://github.com/Speech-Rule-Engine/speech-rule-engine) (the engine screen readers use) in ClearSpeak style: "the fraction with numerator 1 and denominator n squared"; a letter in mathematics is spoken by its name ("e" as "ee", never like the article "a"); its punctuation is a pause, not a word ("f of x, y equals 1." rather than "f of x comma y equals 1 period") |
 | A display equation the book itself reads aloud in the next line | The book's own reading (setting `equation_readings: after`) |
-| An equation set out in lines (an equation array, `aligned`) | One line: just the equation (the one-row array a word processor numbers an equation with is not announced as a table); several lines: one after the other, with a pause between them |
+| An equation set out in lines (an equation array, `aligned`) | One line: just the equation (the one-row array a word processor numbers an equation with is not announced as a table); several lines: one after the other, with a pause between them, a line that starts with + read "plus ..." (it carries on the line above) |
 | Figures | "Figure 9.2." and the caption, then the book's audio description of the picture, if it gives one (see below) |
 | Tables | "Table 3.1." and the caption, then each row with its column names: "180 degrees. Fraction of a turn: a half." |
 | Footnotes | "Footnote." and the note, after its paragraph |

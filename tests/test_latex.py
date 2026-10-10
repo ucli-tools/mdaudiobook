@@ -60,3 +60,31 @@ def test_tables_that_are_tables_stay():
                 r"\begin{cases} 1 & x > 0 \end{cases}",
                 r"\begin{array}{|c|} \hline x \\ \hline \end{array}"]:
         assert latex.prepare_math(tex) == tex, tex
+
+
+def test_a_continued_line_starts_with_the_word_plus():
+    assert latex.prepare_math(r"\begin{array}{r} a = b + c \\ + d + e \end{array}") == \
+        r"\begin{array}{r} a = b + c \\ \text{plus } d + e \end{array}"
+    assert latex.prepare_math(r"\begin{aligned} a &= b \\ & + c \end{aligned}") == \
+        r"\begin{aligned} a &= b \\ & \text{plus } c \end{aligned}"
+    assert latex.prepare_math(r"\begin{array}{r} a = b \\ \ + c \end{array}") == \
+        r"\begin{array}{r} a = b \\ \ \text{plus } c \end{array}"
+    for tex in [r"\left(\begin{array}{r} a \\ + b \end{array}\right)",     # a vector's entry: a sign
+                r"\begin{array}{cc} 1 & 0 \\ +1 & 2 \end{array}",          # a grid
+                r"\begin{array}{r} + a \\ b \end{array}",                   # the first line
+                r"\begin{pmatrix} a \\ + b \end{pmatrix}"]:
+        assert latex.prepare_math(tex) == tex, tex
+
+
+def test_sentence_punctuation_at_the_end_of_mathematics():
+    tp = latex.trailing_punctuation
+    assert tp("x = 1,") == ("x = 1", ",")
+    assert tp("x = 1.") == ("x = 1", ".")
+    assert tp("x = 1;") == ("x = 1", ";")
+    assert tp(r"{\cos^{2}{(a) = \rho}},} ") == (r"{\cos^{2}{(a) = \rho}}}", ",")
+    assert tp(r"\begin{array}{r} a = b, \\ c = d. \\ \end{array}") == \
+        (r"\begin{array}{r} a = b, \\ c = d \\ \end{array}", ".")
+    assert tp(r"x = 1, \quad") == ("x = 1", ",")
+    assert tp(r"x \ldots.") == (r"x \ldots", ".")
+    for tex in [r"f(x, y)", r"1, 2, ...", r"\left\{ x \right.", r"\left. x \right|", "0.5", ",", "{,}", r"\{1, 2\}"]:
+        assert tp(tex) == (tex, ""), tex
