@@ -40,6 +40,11 @@ y = \sin t.
 \end{array} \tag{1.2}
 $$
 
+$$
+\begin{array}{r}
+\end{array} \tag{1.3}
+$$
+
 ```{=latex}
 \begin{figure}[H]
 \centering

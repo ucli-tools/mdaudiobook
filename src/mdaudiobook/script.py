@@ -446,9 +446,9 @@ def build(book, style="clearspeak"):
 
     spoken = mathspeech.speak(w.maths, style=style) if w.maths else []
     for (tex, display), said in zip(w.maths, spoken):
-        if not said:
+        if said is None:
             w.inventory.append(Finding("unspoken_math", tex[:200], ""))
-    spoken = [said or "an equation" for said in spoken]
+    spoken = ["an equation" if said is None else said for said in spoken]     # "": nothing to say
     for f in w.floats:
         f.append(f[2])                                   # the caption as written, with maths marked
         f[2] = re.sub(f"{M_OPEN}(\\d+){M_CLOSE}", lambda m: plain(spoken[int(m.group(1))]), f[2])

@@ -46,6 +46,11 @@ def test_an_equation_in_one_line_is_not_a_table():
     assert latex.prepare_math(r"\begin{array}{r} \begin{array}{r} a = b \end{array} \end{array}") == r"{{a = b}}"
     assert latex.prepare_math(r"\begin{array}{r} a = b, \\ \end{array}") == r"{a = b,}"
     assert latex.prepare_math(r"\begin{aligned} x &= 1 \end{aligned}") == r"{x = 1}"
+    # a control space that ends the line is kept whole: "\" alone would escape the brace after it
+    assert latex.prepare_math(r"\begin{array}{r} \ \square\ \end{array}") == r"{\ \square\ }"
+    assert latex.prepare_math(r"\begin{array}{r} a = 0,\ \end{array}") == r"{a = 0,\ }"
+    assert latex.prepare_math("x = 1,\\ ") == "x = 1,\\ "
+    assert latex.prepare_math(r"\begin{array}{r} \end{array} \tag{1.7}").strip() == "{}"
     assert latex.prepare_math(r"\begin{array}{r} \left\lbrack\begin{matrix} 1 & 0 \\ 0 & 1 \end{matrix}\right\rbrack = I "
                               r"\end{array}") == r"{\left\lbrack\begin{matrix} 1 & 0 \\ 0 & 1 \end{matrix}\right\rbrack = I}"
 
@@ -86,5 +91,7 @@ def test_sentence_punctuation_at_the_end_of_mathematics():
         (r"\begin{array}{r} a = b, \\ c = d \\ \end{array}", ".")
     assert tp(r"x = 1, \quad") == ("x = 1", ",")
     assert tp(r"x \ldots.") == (r"x \ldots", ".")
+    assert tp(r"{a = 0,\ }") == ("{a = 0\\ }", ",")
+    assert tp("x = 1,\\ ") == ("x = 1", ",")
     for tex in [r"f(x, y)", r"1, 2, ...", r"\left\{ x \right.", r"\left. x \right|", "0.5", ",", "{,}", r"\{1, 2\}"]:
         assert tp(tex) == (tex, ""), tex

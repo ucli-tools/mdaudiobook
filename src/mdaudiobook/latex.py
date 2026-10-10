@@ -125,7 +125,7 @@ def prepare_math(tex):
     spacing directives (@{...}) the MathML converter rejects, and an equation
     set out in one line is no longer a table.
     """
-    tex = tex.replace("\n", " ").strip()
+    tex = _trim(tex.replace("\n", " "))
     tex = re.sub(r"\\boldsymbol\{((?:[^{}]|\{[^{}]*\})*)\}", r"\1", tex)
     tex = re.sub(r"\\bm\{((?:[^{}]|\{[^{}]*\})*)\}", r"\1", tex)
     tex = re.sub(r"\^\{?\\circ\}?", "°", tex)
@@ -147,6 +147,13 @@ _LINE_ENVS = {"array", "aligned", "alignedat", "gathered", "split", "align", "al
 _FENCE = re.compile(r"(\\left\s*(\\[A-Za-z]+|\\.|.)|[(\[|]|\\[{|]|\\(lbrack|lparen|langle|lvert|lVert|vert|Vert|"
                     r"lfloor|lceil))\s*$")
 _BEGIN_END = re.compile(r"\\(begin|end)\{([^{}]*)\}")
+
+
+def _trim(tex):
+    """TeX without the space around it, but with the space of a control
+    space (\\ ) that ends it: "x,\\ " cut to "x,\\" would escape what follows."""
+    tex = tex.strip()
+    return tex + " " if re.search(r"(?<!\\)(?:\\\\)*\\$", tex) else tex
 
 
 def _rows(body):
@@ -232,8 +239,8 @@ def _one_line_tables(tex):
         lines = env in _LINE_ENVS and "\\hline" not in body and not (
             env == "array" and (any(len(r) > 1 for r in rows) or _FENCE.search(before)))
         if lines and len(rows) <= 1:
-            line = " ".join(body[a:b].strip() for a, b in rows[0]) if rows else ""
-            out.append(tex[i:m.start()] + "{" + line.strip() + "}")
+            line = " ".join(_trim(body[a:b]) for a, b in rows[0]) if rows else ""
+            out.append(tex[i:m.start()] + "{" + _trim(line) + "}")
         else:
             out.append(tex[i:k] + (_continued_lines(body, rows) if lines else body) + end.group(0))
         i = end.end()

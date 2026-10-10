@@ -44,6 +44,11 @@ def prepare(tex):
     return trailing_punctuation(prepare_math(tex))
 
 
+# An expression with nothing in it but space and braces: an empty equation
+# array, a number (\tag) with no equation. There is nothing to say.
+_NOTHING = re.compile(r"(\s|[{}]|\\[,;:! ]|\\q?quad\b|~)*")
+
+
 def to_mathml(items):
     """[(tex, display)] -> [MathML or None]: one pandoc call for the batch.
 
@@ -99,12 +104,15 @@ def _polish(said, tex=""):
 
 
 def speak(items, style="clearspeak"):
-    """[(tex, display)] -> [spoken text or None where it cannot be spoken]."""
+    """[(tex, display)] -> [spoken text, "" where there is nothing to say, or
+    None where it cannot be spoken]."""
     if not items:
         return []
     if not available():
         raise MathSpeechUnavailable("the maths speech engine is not installed: run `mdaudiobook setup`")
-    mathml = to_mathml(items)
+    prepared = [prepare(tex) for tex, _ in items]
+    loud = [i for i, (tex, _) in enumerate(prepared) if not _NOTHING.fullmatch(tex)]
+    mathml = to_mathml([items[i] for i in loud])
     js = resources.files("mdaudiobook").joinpath("js/sre_batch.js")
     env = dict(os.environ, NODE_PATH=str(node_dir() / "node_modules"))
     with resources.as_file(js) as script:
@@ -112,8 +120,8 @@ def speak(items, style="clearspeak"):
                              capture_output=True, text=True, env=env)
     if res.returncode != 0:
         raise RuntimeError("speech-rule-engine failed: " + res.stderr[-500:])
-    out = []
-    for said, (tex, _) in zip(json.loads(res.stdout), items):
-        prepared, mark = prepare(tex)
-        out.append(_polish(said, prepared) + mark if said and said.strip() else None)
+    out = [""] * len(items)
+    for i, said in zip(loud, json.loads(res.stdout)):
+        tex, mark = prepared[i]
+        out[i] = _polish(said, tex) + mark if said and said.strip() else None
     return out

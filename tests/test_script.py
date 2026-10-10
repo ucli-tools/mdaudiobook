@@ -69,6 +69,12 @@ def test_punctuation_in_mathematics_is_punctuation(built):
     assert [script.plain(s) for s in said] == [
         "f of open paren x, y close paren equals 1.", "a sub 1, a sub 2, and so on, a sub n", "1, 2, 3, and so on",
         "x equals 1;", "open brace x", "T sub period equals 2 pi.", "0.5"]
+    # a control space after the mark; an empty equation array with only its number: nothing to say
+    said = mathspeech.speak([(r"\begin{array}{r} [X,Y] = 0,\ \end{array}", True), (r"x = 1,\ ", True),
+                             (r"\begin{array}{r} \ \square\ \end{array}", True),
+                             ("\\begin{array}{r}\n\\end{array} \\tag{1.7}", True), (r"\tag{2}", True)])
+    assert [script.plain(s) for s in said] == ["open bracket X, Y close bracket equals 0,", "x equals 1,",
+                                               "white small square", "", ""]
     # a word the expression holds itself is not a punctuation mark
     assert script.plain(mathspeech._polish("x comma T sub period", r"x, T_{\text{period}}")) == "x, T sub period"
     assert script.plain(mathspeech._polish("x period T sub comma", r"x. T_{\text{comma}}")) == "x. T sub comma"
@@ -115,6 +121,7 @@ def test_check_finds_what_a_listener_would_miss(built):
     assert "FAIL tables with no caption: 1" in text
     assert "FAIL drawings outside a captioned figure (silent for a listener): 1" in text
     assert "ok   letters no voice here can pronounce (give them a spoken form): 0" in text
+    assert "ok   equations the maths engine cannot speak: 0" in text      # an empty one says nothing
     assert "ok   figures without an audio description (what the picture shows): 0" in text
     assert "note code blocks (not read): 1" in text
     assert rep.failures == 2
