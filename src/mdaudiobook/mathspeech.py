@@ -68,6 +68,13 @@ def _polish(said):
     # "x to the n-th power" reads better as "x to the power n"
     said = re.sub(r"\bto the (\w+)-th power\b", r"to the power \1", said)
     said = re.sub(r"\b([A-Za-z])-th\b", r"\1th", said)
+    # An equation set out in lines is announced "2 lines Line 1: ... Line 2:
+    # ...": a listener needs only a pause between the lines, and a cell left
+    # empty to line them up is not "blank". (One line is not a table at all:
+    # latex.prepare_math unwraps it.)
+    said = re.sub(r"\b\d+ lines? Line 1:(\s*blank\b)?", "", said)
+    said = re.sub(r"\s*\bLine \d+:(\s*blank\b)?", ";", said)
+    said = re.sub(r"^[\s;]+|[\s;]+$", "", re.sub(r"(\s*;)+", ";", said))
     # A single letter in mathematics is a letter, not a word: "e" is not read
     # like the article "a", "a" not like "uh", "i" not like "I"
     said = re.sub(r"(?<![\w'\u2019])([A-Za-z])(?![\w'\u2019])", "\ue010\\1\ue011", said)

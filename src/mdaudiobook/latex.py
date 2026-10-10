@@ -121,8 +121,9 @@ def prepare_math(tex):
     """Rewrite TeX into what pandoc's MathML writer renders.
 
     Typography that is not spoken goes (bold symbols are the same symbols),
-    a degree sign becomes a unit, and array column specifications lose the
-    spacing directives (@{...}) the MathML converter rejects.
+    a degree sign becomes a unit, array column specifications lose the
+    spacing directives (@{...}) the MathML converter rejects, and an equation
+    set out in one line is no longer a table.
     """
     tex = tex.replace("\n", " ").strip()
     tex = re.sub(r"\\boldsymbol\{((?:[^{}]|\{[^{}]*\})*)\}", r"\1", tex)
@@ -134,7 +135,93 @@ def prepare_math(tex):
         s = re.sub(r"@\{(?:[^{}]|\{[^{}]*\})*\}", "", m.group(2))
         return m.group(1) + "{" + re.sub(r"\s+", "", s) + "}"
     tex = re.sub(r"(\\begin\{array\})\{((?:[^{}]|\{(?:[^{}]|\{[^{}]*\})*\})*)\}", spec, tex)
-    return _flatten_text(tex)
+    return _flatten_text(_one_line_tables(tex))
+
+
+# Environments that set an equation out in lines. Word numbers an equation by
+# putting it in a one-row equation array, which a conversion hands over as
+# \begin{array}{r} ... \end{array}; read as a table it is "1 lines Line 1: ..."
+_LINE_ENVS = {"array", "aligned", "alignedat", "gathered", "split", "align", "align*", "alignat", "alignat*",
+              "gather", "gather*"}
+# What opens a matrix or a vector: a fenced array stays a table
+_FENCE = re.compile(r"(\\left\s*(\\[A-Za-z]+|\\.|.)|[(\[|]|\\[{|]|\\(lbrack|lparen|langle|lvert|lVert|vert|Vert|"
+                    r"lfloor|lceil))\s*$")
+_BEGIN_END = re.compile(r"\\(begin|end)\{([^{}]*)\}")
+
+
+def _rows(body):
+    """A table's rows that are not empty, each a list of its cells: split at
+    the table's own row and cell marks, not at those of a table inside it."""
+    rows, cells, depth, i, start = [], [], 0, 0, 0
+    while i < len(body):
+        ch = body[i]
+        if depth == 0 and (ch == "&" or body.startswith("\\\\", i)):
+            cells.append(body[start:i])
+            if ch == "&":
+                i += 1
+            else:
+                rows.append(cells)
+                cells = []
+                i += 2
+                m = re.match(r"\s*\[[^]]*\]", body[i:])       # \\[2pt]
+                i += m.end() if m else 0
+            start = i
+            continue
+        if ch == "\\":
+            m = re.match(r"\\(begin|end)\{[^{}]*\}", body[i:])
+            if m:
+                depth += 1 if m.group(1) == "begin" else -1
+                i += m.end()
+            else:
+                i += 2
+            continue
+        if ch == "{":
+            depth += 1
+        elif ch == "}":
+            depth -= 1
+        i += 1
+    rows.append(cells + [body[start:]])
+    return [r for r in rows if "".join(r).strip()]
+
+
+def _one_line_tables(tex):
+    """An equation set out in one line is just that line: a one-row table of
+    lines becomes a group, so it is spoken as its content. Tables of two or
+    more lines, matrices, cases and fenced arrays are kept."""
+    out, i = [], 0
+    while True:
+        m = _BEGIN_END.search(tex, i)
+        if not m:
+            break
+        if m.group(1) == "end":                     # unbalanced: left as it is
+            out.append(tex[i:m.end()])
+            i = m.end()
+            continue
+        depth = 0
+        for end in _BEGIN_END.finditer(tex, m.start()):
+            depth += 1 if end.group(1) == "begin" else -1
+            if depth == 0:
+                break
+        else:
+            break
+        env, k = m.group(2), m.end()
+        if env in ("array", "alignedat", "alignat", "alignat*"):    # column specification
+            a = re.match(r"\s*(\[[^]]*\]\s*)?\{", tex[k:end.start()])
+            if a:
+                k = _balanced(tex, k + a.end() - 1)
+        body = _one_line_tables(tex[k:end.start()])
+        rows = _rows(body)
+        before = "".join(out) + tex[i:m.start()]
+        # an array's columns are columns (a row vector), and a fenced array is
+        # a matrix; the & of the aligning environments only line rows up
+        if (env in _LINE_ENVS and len(rows) <= 1 and "\\hline" not in body
+                and not (env == "array" and (rows and len(rows[0]) > 1 or _FENCE.search(before)))):
+            line = " ".join(c.strip() for c in rows[0]) if rows else ""
+            out.append(tex[i:m.start()] + "{" + line.strip() + "}")
+        else:
+            out.append(tex[i:k] + body + end.group(0))
+        i = end.end()
+    return "".join(out) + tex[i:]
 
 
 _FONT = re.compile(r"\\(textit|textbf|textrm|textsf|texttt|textup|textsl|emph)\{")

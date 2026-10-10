@@ -25,6 +25,21 @@ $$e^{i\theta} = \cos\theta + i\sin\theta$$
 
 $$\sum_{n=1}^{\infty} \frac{1}{n^2} = \frac{\pi^2}{6}$$
 
+The circle and its two coordinates, numbered as a word processor numbers them:
+
+$$
+\begin{array}{r}
+x^{2} + y^{2} = 1,
+\end{array} \tag{1.1}
+$$
+
+$$
+\begin{array}{r}
+x = \cos t, \\
+y = \sin t.
+\end{array} \tag{1.2}
+$$
+
 ```{=latex}
 \begin{figure}[H]
 \centering

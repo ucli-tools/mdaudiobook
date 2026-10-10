@@ -41,6 +41,21 @@ def test_equations_the_book_reads_itself(built):
     assert any(t.startswith("the sum from n equals 1 to infinity") for t in one)   # no reading: engine
 
 
+def test_equations_set_out_in_lines(built):
+    one = texts(built[1], "Chapter 1: The Unit Circle")
+    assert "x squared plus y squared equals 1 comma" in one          # one line: only the equation
+    assert "x equals cosine t comma; y equals sine t period" in one   # two lines: a pause between them
+    assert not any("lines" in t or "Line" in t for t in one)
+    # what the speech engine says of a table of lines that reaches it anyway
+    def polish(said):
+        return script.plain(mathspeech._polish(said))
+    assert polish("1 lines Line 1: blank equals 1") == "equals 1"
+    assert polish("3 lines Line 1: 1 zero Line 2: blank Line 3: zero 1") == "1 zero; zero 1"
+    assert polish("the 2 by 2 matrix Row 1: Column 1, blank Column 2, 1") == \
+        "the 2 by 2 matrix Row 1: Column 1, blank Column 2, 1"
+    assert polish("2 cases Case 1: 1 if x is greater than 0") == "2 cases Case 1: 1 if x is greater than 0"
+
+
 def test_figures_tables_notes_and_normalising(built):
     one = texts(built[1], "Chapter 1: The Unit Circle")
     assert "Figure 1.1. The unit circle. Every point on it is one unit from the centre." in one

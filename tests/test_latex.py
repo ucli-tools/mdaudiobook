@@ -31,6 +31,32 @@ def test_captionof_table_becomes_a_table():
 def test_math_preparation():
     assert latex.prepare_math(r"\boldsymbol{e}^{i\pi}") == r"e^{i\pi}"
     assert latex.prepare_math(r"180^\circ") == "180°"
-    assert latex.prepare_math(r"\begin{array}{c c|c@{\quad}c} a \end{array}") == r"\begin{array}{cc|cc} a \end{array}"
+    assert latex.prepare_math(r"\begin{array}{c c|c@{\quad}c} a & b & c & d \\ e & f & g & h \end{array}") == \
+        r"\begin{array}{cc|cc} a & b & c & d \\ e & f & g & h \end{array}"
     assert latex.prepare_math(r"\text{synthetic \textit{a posteriori}}") == r"\text{synthetic a posteriori}"
     assert latex.prepare_math(r"\textbf{x} + 1") == r"\text{x} + 1"
+
+
+def test_an_equation_in_one_line_is_not_a_table():
+    # Word numbers an equation by putting it in a one-row equation array
+    assert latex.prepare_math("\\begin{array}{r}\nx^{2} + y^{2} = r,\n\\end{array} \\tag{1.3}").strip() == \
+        r"{x^{2} + y^{2} = r,}"
+    assert latex.prepare_math(r"\cosh^{2}\begin{array}{r} (u) - \sinh^{2}(u) = 1. \end{array}") == \
+        r"\cosh^{2}{(u) - \sinh^{2}(u) = 1.}"
+    assert latex.prepare_math(r"\begin{array}{r} \begin{array}{r} a = b \end{array} \end{array}") == r"{{a = b}}"
+    assert latex.prepare_math(r"\begin{array}{r} a = b, \\ \end{array}") == r"{a = b,}"
+    assert latex.prepare_math(r"\begin{aligned} x &= 1 \end{aligned}") == r"{x = 1}"
+    assert latex.prepare_math(r"\begin{array}{r} \left\lbrack\begin{matrix} 1 & 0 \\ 0 & 1 \end{matrix}\right\rbrack = I "
+                              r"\end{array}") == r"{\left\lbrack\begin{matrix} 1 & 0 \\ 0 & 1 \end{matrix}\right\rbrack = I}"
+
+
+def test_tables_that_are_tables_stay():
+    for tex in [r"\begin{array}{r} a = b, \\ c = d. \end{array}",          # two lines
+                r"\begin{aligned} x &= a \\ &= b \end{aligned}",
+                r"\left(\begin{array}{c} x \end{array}\right)",            # fenced: a matrix
+                r"\left(\begin{array}{ccc} 1 & 2 & 3 \end{array}\right)",  # a row vector
+                r"\begin{array}{ccc} 1 & 2 & 3 \end{array}",
+                r"\begin{pmatrix} x \end{pmatrix}",
+                r"\begin{cases} 1 & x > 0 \end{cases}",
+                r"\begin{array}{|c|} \hline x \\ \hline \end{array}"]:
+        assert latex.prepare_math(tex) == tex, tex
