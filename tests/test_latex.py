@@ -95,3 +95,13 @@ def test_sentence_punctuation_at_the_end_of_mathematics():
     assert tp("x = 1,\\ ") == ("x = 1", ",")
     for tex in [r"f(x, y)", r"1, 2, ...", r"\left\{ x \right.", r"\left. x \right|", "0.5", ",", "{,}", r"\{1, 2\}"]:
         assert tp(tex) == (tex, ""), tex
+
+
+def test_colour_is_not_spoken():
+    # A table's red and blue values (kept from the Word file) are read as the values themselves.
+    assert latex.prepare_math(r"\textcolor[HTML]{FF0000}{\frac{2i\pi}{3}}") == r"\frac{2i\pi}{3}"
+    assert latex.prepare_math(r"\displaystyle \textcolor{red}{x} + \textcolor {blue} {y}") == r"\displaystyle x + y"
+    assert latex.prepare_math(r"{\color{red} a} + \color[HTML]{1E48FF}b") == r"{ a} + b"
+    assert latex.prepare_math(r"\colorbox{yellow}{z} \textcolor{red}{a \textcolor{blue}{b}}") == r"z a b"
+    assert latex.prepare_math(r"\colorlet{x}{red} q") == r"\colorlet{x}{red} q"
+

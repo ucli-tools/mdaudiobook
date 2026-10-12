@@ -117,15 +117,42 @@ def prepare(tex):
     return tex
 
 
+def _uncolour(tex):
+    """Colour is for the eye: \\textcolor[model]{colour}{X} and \\colorbox{colour}{X} become X,
+    and \\color[model]{colour} goes."""
+    out, i = [], 0
+    pattern = re.compile(r"\\(textcolor|colorbox|color)\s*(\[[^\]]*\])?\s*(?=\{)")
+    while True:
+        m = pattern.search(tex, i)
+        if not m:
+            out.append(tex[i:])
+            return "".join(out)
+        out.append(tex[i:m.start()])
+        j = _balanced(tex, m.end())                      # past {colour}
+        if m.group(1) == "color":
+            i = j
+            continue
+        k = j
+        while k < len(tex) and tex[k].isspace():
+            k += 1
+        if k < len(tex) and tex[k] == "{":
+            end = _balanced(tex, k)
+            out.append(_uncolour(tex[k + 1:end - 1]))
+            i = end
+        else:
+            i = j
+
+
 def prepare_math(tex):
     """Rewrite TeX into what pandoc's MathML writer renders.
 
-    Typography that is not spoken goes (bold symbols are the same symbols),
+    Typography that is not spoken goes (bold symbols are the same symbols, a
+    coloured value is the same value),
     a degree sign becomes a unit, array column specifications lose the
     spacing directives (@{...}) the MathML converter rejects, and an equation
     set out in one line is no longer a table.
     """
-    tex = _trim(tex.replace("\n", " "))
+    tex = _uncolour(_trim(tex.replace("\n", " ")))
     tex = re.sub(r"\\boldsymbol\{((?:[^{}]|\{[^{}]*\})*)\}", r"\1", tex)
     tex = re.sub(r"\\bm\{((?:[^{}]|\{[^{}]*\})*)\}", r"\1", tex)
     tex = re.sub(r"\^\{?\\circ\}?", "°", tex)
