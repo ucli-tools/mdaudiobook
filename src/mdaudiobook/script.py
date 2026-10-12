@@ -435,6 +435,18 @@ def credits(book):
     return opening, closing
 
 
+def after_its_name(before, said, tex):
+    """A symbol written right after its own name (« over the real numbers $\\mathbb{R}$ ») is said by
+    its letters, not by its name a second time (« the real numbers the real numbers »)."""
+    m = re.fullmatch(r"(?:the )?(.+?)([.,;:!?]*)", said)
+    if not m or not re.search(r"\b" + re.escape(m.group(1)) + r"[\s,]*$", before, re.I):
+        return said
+    letters = re.sub(r"\\math[a-z]+\{([A-Za-z]+)\}", r"\1", tex.strip())
+    if not re.fullmatch(r"[A-Za-z]{1,3}", letters):
+        return said
+    return " ".join(f"{L_OPEN}{c}{L_CLOSE}" for c in letters) + m.group(2)
+
+
 def build(book, style="clearspeak"):
     """Book -> Script."""
     s = book.settings
@@ -458,7 +470,9 @@ def build(book, style="clearspeak"):
         _apply_equation_readings(chapters)
     for ch in chapters:
         for seg in ch.segments:
-            seg.text = normalize(re.sub(f"{M_OPEN}(\\d+){M_CLOSE}", lambda m: spoken[int(m.group(1))], seg.text))
+            seg.text = normalize(re.sub(f"{M_OPEN}(\\d+){M_CLOSE}",
+                                        lambda m: after_its_name(m.string[:m.start()], spoken[int(m.group(1))],
+                                                                 w.maths[int(m.group(1))][0]), seg.text))
     chapters = _split_long(chapters, s)
     if s["credits"]:
         opening, closing = credits(book)

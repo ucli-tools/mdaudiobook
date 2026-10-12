@@ -67,7 +67,7 @@ def test_punctuation_in_mathematics_is_punctuation(built):
                              (r"x = 1;", True), (r"\left\{ x \right.", True), (r"T_{\text{period}} = 2\pi.", False),
                              (r"0.5", False)])
     assert [script.plain(s) for s in said] == [
-        "f of open paren x, y close paren equals 1.", "a sub 1, a sub 2, and so on, a sub n", "1, 2, 3, and so on",
+        "f of x, y equals 1.", "a sub 1, a sub 2, and so on, a sub n", "1, 2, 3, and so on",
         "x equals 1;", "open brace x", "T sub period equals 2 pi.", "0.5"]
     # a control space after the mark; an empty equation array with only its number: nothing to say
     said = mathspeech.speak([(r"\begin{array}{r} [X,Y] = 0,\ \end{array}", True), (r"x = 1,\ ", True),
@@ -78,6 +78,26 @@ def test_punctuation_in_mathematics_is_punctuation(built):
     # a word the expression holds itself is not a punctuation mark
     assert script.plain(mathspeech._polish("x comma T sub period", r"x, T_{\text{period}}")) == "x, T sub period"
     assert script.plain(mathspeech._polish("x period T sub comma", r"x. T_{\text{comma}}")) == "x. T sub comma"
+
+
+def test_names_and_arguments_as_a_narrator_says_them(built):
+    # a name in capitals before its brackets is one name, said letter by letter; a function's
+    # arguments follow « of » without their brackets; a point keeps its brackets
+    said = mathspeech.speak([(r"GL(n, F)", False), (r"SO(3)", False), (r"f(g(x))", False), (r"(x, y)", False),
+                             (r"\{ M \in SL(n, F) \mid \det(M) = 1 \}", False)])
+    assert [script.plain(s) for s in said] == [
+        "G L of n, F", "S O of 3", "f of g of x", "open paren x, y close paren",
+        "the set of all M in S L of n, F such that the determinant of M equals 1"]
+
+
+def test_a_symbol_after_its_own_name_is_said_by_its_letter():
+    def say(before, said, tex):
+        return script.plain(script.after_its_name(before, said, tex))
+    assert say("over the real numbers ", "the real numbers", r"\mathbb{R}") == "R"
+    assert say("or the complex numbers, ", "the complex numbers.", r"\mathbb{C}") == "C."
+    # not after its name, or not a letter: as the engine says it
+    assert say("over a field ", "the real numbers", r"\mathbb{R}") == "the real numbers"
+    assert say("the real numbers ", "the real numbers squared", r"\mathbb{R}^2") == "the real numbers squared"
 
 
 def test_figures_tables_notes_and_normalising(built):

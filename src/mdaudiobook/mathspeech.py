@@ -39,9 +39,14 @@ def setup():
                    check=True)
 
 
+# A name in capitals before its brackets is one name, not letters multiplied or applied to one
+# another: GL(n, F), SO(3) (the engine reads « G of L of open paren n, F close paren »).
+_NAMED = re.compile(r"(?<![\\A-Za-z{])([A-Z]{2,4})(?=\s*\()")
+
+
 def prepare(tex):
     """TeX -> (what pandoc renders, the sentence punctuation taken off its end)."""
-    return trailing_punctuation(prepare_math(tex))
+    return trailing_punctuation(_NAMED.sub(r"\\operatorname{\1}", prepare_math(tex)))
 
 
 # An expression with nothing in it but space and braces: an empty equation
@@ -89,6 +94,14 @@ def _polish(said, tex=""):
         said = re.sub(r"\s*\bperiod\b", ".", said)
     if "comma" not in tex.lower():
         said = re.sub(r"\s*\bcomma\b", ",", said)
+    # A function's arguments follow « of » without their brackets, as a narrator says them: « f of
+    # x, y », not « f of open paren x, y close paren »; the innermost first.
+    inner = re.compile(r"\bof open paren ((?:(?!\b(?:open|close) paren\b).)+?) close paren\b")
+    while inner.search(said):
+        said = inner.sub(r"of \1", said)
+    said = re.sub(r"(?<!\bthe )\bdeterminant (?=[A-Za-z]\b)", "the determinant of ", said)
+    # A name in capitals (GL, SO) is said letter by letter.
+    said = re.sub(r"\b[A-Z]{2,4}\b", lambda m: " ".join(m.group(0)), said)
     # An equation set out in lines is announced "2 lines Line 1: ... Line 2:
     # ...": a listener needs only a pause between the lines, and a cell left
     # empty to line them up is not "blank". (One line is not a table at all:
