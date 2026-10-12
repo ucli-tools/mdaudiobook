@@ -75,6 +75,13 @@ def to_mathml(items):
     return out
 
 
+# Words that make an argument more than names and numbers: its brackets show where it ends.
+_COMPOUND = re.compile(r"\b(plus|minus|times|over|equals|raised|power|squared|cubed|fraction|root|integral|"
+                       r"sum|product|divided|less|greater|approximately|member|union|intersection|composed|"
+                       r"dot|cross|modulo|factorial|and|or|such|set|implies|limit|log|sine|cosine|tangent|"
+                       r"exponential|absolute|norm|bracket|brace)\b")
+
+
 def _polish(said, tex=""):
     """The engine's reading of an expression, as a narrator says it. `tex` is
     the expression: a word it holds itself (\\text{period}) is not taken for
@@ -95,10 +102,15 @@ def _polish(said, tex=""):
     if "comma" not in tex.lower():
         said = re.sub(r"\s*\bcomma\b", ",", said)
     # A function's arguments follow « of » without their brackets, as a narrator says them: « f of
-    # x, y », not « f of open paren x, y close paren »; the innermost first.
+    # x, y », not « f of open paren x, y close paren »; the innermost first. Only names and numbers:
+    # brackets around a sum or a product say where it ends (« the cosine of open paren k x minus
+    # theta close paren »), and stay.
     inner = re.compile(r"\bof open paren ((?:(?!\b(?:open|close) paren\b).)+?) close paren\b")
-    while inner.search(said):
-        said = inner.sub(r"of \1", said)
+    while True:
+        plain = inner.sub(lambda m: m.group(0) if _COMPOUND.search(m.group(1)) else "of " + m.group(1), said)
+        if plain == said:
+            break
+        said = plain
     said = re.sub(r"(?<!\bthe )\bdeterminant (?=[A-Za-z]\b)", "the determinant of ", said)
     # A name in capitals (GL, SO) is said letter by letter.
     said = re.sub(r"\b[A-Z]{2,4}\b", lambda m: " ".join(m.group(0)), said)

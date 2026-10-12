@@ -88,6 +88,10 @@ def test_names_and_arguments_as_a_narrator_says_them(built):
     assert [script.plain(s) for s in said] == [
         "G L of n, F", "S O of 3", "f of g of x", "open paren x, y close paren",
         "the set of all M in S L of n, F such that the determinant of M equals 1"]
+    # brackets around a sum or a product say where it ends, and stay
+    said = mathspeech.speak([(r"\cos(k x - \theta)", False), (r"f(x + 1)", False), (r"V(X, \tau)", False)])
+    assert [script.plain(s) for s in said] == [
+        "the cosine of open paren k x minus theta close paren", "f of open paren x plus 1 close paren", "V of X, tau"]
 
 
 def test_a_symbol_after_its_own_name_is_said_by_its_letter():
